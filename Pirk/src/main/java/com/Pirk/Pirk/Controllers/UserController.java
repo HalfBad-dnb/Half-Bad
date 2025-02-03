@@ -41,7 +41,7 @@ public class UserController {
       username = principal.toString();
     }
 
-    System.out.println("Username: " + username);
+    
 
     // Find the user in the database
     Optional<User> userOptional = userRepository.findByUsername(username);
