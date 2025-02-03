@@ -1,0 +1,111 @@
+package com.Pirk.Pirk.models;
+
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.JoinColumn;
+import java.util.List;
+
+@Entity
+public class Product {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String name;
+
+    @Column(nullable = false)
+    private String description;
+
+    @Column(nullable = false)
+    private Double price;
+
+    @Column
+    private String imageUrl;
+
+    @ElementCollection
+    @CollectionTable(name = "product_colors", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "color")
+    private List<String> colors;
+
+    @ElementCollection
+    @CollectionTable(name = "product_sizes", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "size")
+    private List<String> sizes;
+
+    // Default constructor
+    public Product() {}
+
+    // Constructor with parameters
+    public Product(String name, String description, Double price, String imageUrl, List<String> colors, List<String> sizes) {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.imageUrl = imageUrl;
+        this.colors = colors;
+        this.sizes = sizes;
+    }
+
+    // Getters and setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public Double getPrice() {
+        return price;
+    }
+
+    public void setPrice(Double price) {
+        this.price = price;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public List<String> getColors() {
+        return colors;
+    }
+
+    public void setColors(List<String> colors) {
+        this.colors = colors;
+    }
+
+    public List<String> getSizes() {
+        return sizes;
+    }
+
+    public void setSizes(List<String> sizes) {
+        this.sizes = sizes;
+    }
+}

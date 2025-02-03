@@ -1,0 +1,47 @@
+/* Use Tailwind's @apply directive to apply utility classes */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+
+/* Dust effect animation */
+@keyframes dustEffect {
+  0% {
+    opacity: 0;
+    transform: scale(0) rotate(45deg); /* Starting with a small and rotated logo */
+    filter: blur(5px); /* Simulate the dust effect */
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.2); /* Slightly bigger with less blur */
+    filter: blur(2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1); /* Final size */
+    filter: blur(0);
+  }
+}
+
+.animate-logo {
+  animation: dustEffect 2s ease-out forwards; /* Animation duration of 2 seconds */
+}
+
+/* Autofill styles (unchanged) */
+@layer base {
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px inset !important;
+    -webkit-text-fill-color: white;
+  }
+
+  input:-internal-autofill-selected {
+    background-color: white !important;
+  }
+}

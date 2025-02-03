@@ -1,0 +1,79 @@
+/* Reset and basic styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin-top: 60px; /* Adjust based on the navbar height */
+}
+
+/* Navigation bar styling */
+nav.menu-bar {
+    background-color: #333;
+    position: fixed;
+    top: 0;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+nav.menu-bar ul {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex; /* Horizontal layout */
+    justify-content: center; /* Center align the nav items */
+}
+
+nav.menu-bar ul li {
+    padding: 14px 20px;
+}
+
+nav.menu-bar ul li a {
+    color: white;
+    text-decoration: none;
+    font-size: 18px;
+    display: block;
+    transition: background-color 0.3s ease;
+}
+
+nav.menu-bar ul li a:hover {
+    background-color: #575757;
+    border-radius: 5px;
+}
+
+nav.menu-bar ul li a.active {
+    background-color: #4CAF50;
+    border-radius: 5px;
+}
+
+/* Header styling */
+header {
+    text-align: center;
+    padding: 60px 0; /* Added padding to give space for fixed navbar */
+    background-color: #333;
+    color: white;
+}
+
+header h1 {
+    margin-bottom: 10px;
+}
+
+/* Main content section */
+main {
+    padding: 20px;
+    text-align: center;
+}
+
+/* Footer styling */
+footer {
+    background-color: #333;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+}
