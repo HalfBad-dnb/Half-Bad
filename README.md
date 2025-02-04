@@ -7,11 +7,11 @@ Pirk/src/main/resources/application.properties
 
 change database properties to yours database.
 
-THEN DO THESE STEPS BELOW.
+THEN DO THESE STEPS BELOW IN TERMINAL OR CMD (depends on system you are runing it )
 
 
 1. Go to --> Downloads/Parduotuve-main/Pirk (or where you put this project file )
-/pirk <-- ( when you are here ,  run this comand in terminal) --> ./run.sh
+/pirk <--  when you are here ,  run this comand--> ./run.sh
 
 this gonna start Backend.
 
@@ -24,3 +24,7 @@ then this command gets you to frontend --> cd frontend
 then run --> npm run dev .
 
 3. now you should have running program.
+
+4. Change ports if they are in use or kill 
+
+in UIview is pictures of how web app look .
