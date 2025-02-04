@@ -13,10 +13,10 @@ public class Order {
 
     private String username;
     private String orderNumber;
-    
+
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
-    
+
     private double totalAmount;
 
     @OneToOne(cascade = CascadeType.ALL)
@@ -26,6 +26,9 @@ public class Order {
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "payment_info_id")
     private PaymentInfo paymentInfo;
+
+    @Column(nullable = false)
+    private Boolean emailSent = false;  // ✅ Fix: Ensure it is never null
 
     // Getters and Setters
     public Long getId() {
@@ -82,5 +85,13 @@ public class Order {
 
     public void setPaymentInfo(PaymentInfo paymentInfo) {
         this.paymentInfo = paymentInfo;
+    }
+
+    public Boolean getEmailSent() {
+        return emailSent;
+    }
+
+    public void setEmailSent(Boolean emailSent) {
+        this.emailSent = emailSent;
     }
 }

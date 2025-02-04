@@ -14,27 +14,57 @@ const PaymentPage = () => {
   useEffect(() => {
     const shippingInfo = sessionStorage.getItem('shippingInfo');
     if (!shippingInfo) {
-      navigate('/checkout');  // Redirect to checkout if no shipping info found
+      navigate('/checkout'); // Redirect to checkout if no shipping info found
     }
   }, [navigate]);
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    let { name, value } = e.target;
+
+    if (name === 'cardNumber') {
+      value = value.replace(/\D/g, ''); // Remove non-numeric characters
+      if (value.length > 16) return;
+    }
+
+    if (name === 'cvv') {
+      value = value.replace(/\D/g, ''); // Allow only numbers
+      if (value.length > 4) return; // CVV should be 3 or 4 digits
+    }
+
+    if (name === 'expirationDate') {
+      value = value.replace(/[^0-9/]/g, ''); // Allow only numbers and '/'
+      if (value.length === 2 && !value.includes('/')) {
+        value += '/'; // Auto-insert slash after MM
+      }
+      if (value.length > 5) return; // Prevent extra input
+    }
+
     setPaymentInfo((prevInfo) => ({
       ...prevInfo,
       [name]: value,
     }));
   };
 
+  const isExpirationDateValid = (expDate) => {
+    const regex = /^(0[1-9]|1[0-2])\/\d{2}$/;
+    if (!regex.test(expDate)) return false;
+
+    const [month, year] = expDate.split('/').map(Number);
+    const currentYear = new Date().getFullYear() % 100; // Get last two digits of the year
+    const currentMonth = new Date().getMonth() + 1;
+
+    return year > currentYear || (year === currentYear && month >= currentMonth);
+  };
+
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
     const { cardNumber, expirationDate, cvv } = paymentInfo;
 
-    // Simple validation (you can expand this with more complex checks)
-    const isCardValid = /^\d{16}$/.test(cardNumber); // Check if card number is 16 digits
-    const isExpirationDateValid = /^(0[1-9]|1[0-2])\/\d{2}$/.test(expirationDate); // Check if expiration date is in MM/YY format
+    const isCardValid = /^\d{16}$/.test(cardNumber);
+    const isCvvValid = /^\d{3,4}$/.test(cvv);
+    const isDateValid = isExpirationDateValid(expirationDate);
 
-    if (isCardValid && isExpirationDateValid && cvv) {
+    if (isCardValid && isCvvValid && isDateValid) {
       sessionStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
       navigate('/order-confirmation');
     } else {
@@ -59,8 +89,9 @@ const PaymentPage = () => {
             name="cardNumber"
             value={paymentInfo.cardNumber}
             onChange={handleInputChange}
-            placeholder="Card Number"
+            placeholder="Card Number (16 digits)"
             className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
+            maxLength={16}
           />
           <input
             type="text"
@@ -69,14 +100,16 @@ const PaymentPage = () => {
             onChange={handleInputChange}
             placeholder="Expiration Date (MM/YY)"
             className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
+            maxLength={5}
           />
           <input
             type="text"
             name="cvv"
             value={paymentInfo.cvv}
             onChange={handleInputChange}
-            placeholder="CVV"
+            placeholder="CVV (3 or 4 digits)"
             className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
+            maxLength={4}
           />
           <button
             type="submit"

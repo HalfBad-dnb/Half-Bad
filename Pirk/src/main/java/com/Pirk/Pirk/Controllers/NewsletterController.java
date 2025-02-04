@@ -4,7 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.Pirk.Pirk.models.Newsletter;
-import com.Pirk.Pirk.Repository.NewsletterRepository;
+import com.Pirk.Pirk.repositories.NewsletterRepository;
+
 import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;

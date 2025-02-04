@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faUser, faHome, faCity, faEnvelope, faGlobe } from "@fortawesome/free-solid-svg-icons";
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -50,11 +52,9 @@ const CheckoutPage = () => {
     try {
       const response = await fetch("http://localhost:8081/api/order/submit", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json" 
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(orderData),
-        credentials: 'include', // Allow cookies (if necessary)
+        credentials: "include",
       });
 
       if (response.ok) {
@@ -73,61 +73,56 @@ const CheckoutPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-r from-[#8B0000] to-[#000000] text-white flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-7xl bg-transparent border-4 border-yellow-500 rounded-xl shadow-lg p-8 mt-8">
-        <h2 className="text-3xl font-semibold mb-6 text-center text-yellow-500">Order Summary</h2>
-        <div className="text-xl text-yellow-500 font-bold text-center mb-6">
-          Total: ${orderTotal}
+    <div className="min-h-screen bg-gradient-to-r from-[#4B0000] to-[#000000] text-white">
+      {/* Hero Section */}
+      <section className="relative text-center py-20 px-8 z-30">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#4B0000] via-black to-[#4B0000] opacity-50"></div>
+        <div className="relative z-10 max-w-7xl mx-auto">
+          <h1 className="text-5xl font-bold text-[#FFD700] mb-6 animate-pulse">Checkout</h1>
+          <p className="text-2xl text-gray-300 mb-12">Complete your order</p>
         </div>
+      </section>
 
-        <form onSubmit={handleProceedToPayment} className="space-y-4">
-          <input
-            type="text"
-            name="name"
-            value={shippingInfo.name}
-            onChange={handleInputChange}
-            placeholder="Full Name"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-          />
-          <input
-            type="text"
-            name="address"
-            value={shippingInfo.address}
-            onChange={handleInputChange}
-            placeholder="Address"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-          />
-          <input
-            type="text"
-            name="city"
-            value={shippingInfo.city}
-            onChange={handleInputChange}
-            placeholder="City"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-          />
-          <input
-            type="text"
-            name="postalCode"
-            value={shippingInfo.postalCode}
-            onChange={handleInputChange}
-            placeholder="Postal Code"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-          />
-          <input
-            type="text"
-            name="country"
-            value={shippingInfo.country}
-            onChange={handleInputChange}
-            placeholder="Country"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-          />
-          <button
-            type="submit"
-            className="w-full py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition"
-          >
-            Proceed to Payment
-          </button>
-        </form>
+      {/* Checkout Form Section */}
+      <div className="relative py-20 px-8 z-30">
+        <div className="relative z-10 max-w-md mx-auto">
+          <div className="bg-black bg-opacity-80 backdrop-blur-md p-8 rounded-2xl shadow-2xl border-2 border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-500">
+            <h2 className="text-2xl font-semibold text-center text-[#FFD700] mb-6">Order Summary</h2>
+            <div className="text-xl text-yellow-500 font-bold text-center mb-6">Total: ${orderTotal}</div>
+
+            <form onSubmit={handleProceedToPayment} className="space-y-6">
+              {[
+                { name: "name", icon: faUser, placeholder: "Full Name" },
+                { name: "address", icon: faHome, placeholder: "Address" },
+                { name: "city", icon: faCity, placeholder: "City" },
+                { name: "postalCode", icon: faEnvelope, placeholder: "Postal Code" },
+                { name: "country", icon: faGlobe, placeholder: "Country" },
+              ].map((field) => (
+                <div key={field.name}>
+                  <label className="block text-[#FFD700] text-sm font-medium mb-2">
+                    <FontAwesomeIcon icon={field.icon} className="mr-2" /> {field.placeholder}
+                  </label>
+                  <input
+                    type="text"
+                    name={field.name}
+                    value={shippingInfo[field.name]}
+                    onChange={handleInputChange}
+                    placeholder={field.placeholder}
+                    className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
+                    required
+                  />
+                </div>
+              ))}
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-[#FFD700] text-black font-semibold rounded-lg hover:bg-[#FFC700] transition-all duration-300"
+              >
+                Proceed to Payment
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   );
