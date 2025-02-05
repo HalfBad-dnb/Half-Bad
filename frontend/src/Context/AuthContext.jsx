@@ -13,19 +13,32 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if the user is already logged in (persist session)
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+    try {
+      // Check if the user is already logged in (persist session)
+      const storedUser = localStorage.getItem("user");
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      // Clear potentially corrupted data
+      localStorage.removeItem("user");
+      setUser(null);
+      setIsAuthenticated(false);
     }
   }, []);
 
   // Login function to set user and authentication status
   const login = (userData) => {
-    setUser(userData);
-    setIsAuthenticated(true);
-    localStorage.setItem("user", JSON.stringify(userData));
+    try {
+      setUser(userData);
+      setIsAuthenticated(true);
+      localStorage.setItem("user", JSON.stringify(userData));
+    } catch (error) {
+      console.error("Error saving user data:", error);
+    }
   };
 
   // Logout function to clear user data and authentication status
