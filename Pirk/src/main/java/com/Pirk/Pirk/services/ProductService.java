@@ -27,6 +27,11 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
+    // Get all products
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
     // Get all products with pagination
     public Page<Product> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable);
@@ -49,18 +54,17 @@ public class ProductService {
     }
 
     // Update an existing product
-    public Product updateProduct(Long id, Product updatedProduct) {
-        Product existingProduct = getProductById(id);
+    public Product updateProduct(Long id, Product productDetails) {
+        Product product = getProductById(id);
         
-        // Update the fields
-        existingProduct.setName(updatedProduct.getName());
-        existingProduct.setDescription(updatedProduct.getDescription());
-        existingProduct.setPrice(updatedProduct.getPrice());
-        existingProduct.setCategory(updatedProduct.getCategory());
-        existingProduct.setImageUrl(updatedProduct.getImageUrl());
-        existingProduct.setStock(updatedProduct.getStock());
+        product.setName(productDetails.getName());
+        product.setDescription(productDetails.getDescription());
+        product.setPrice(productDetails.getPrice());
+        product.setImageUrl(productDetails.getImageUrl());
+        product.setCategory(productDetails.getCategory());
+        product.setStock(productDetails.getStock());
         
-        return productRepository.save(existingProduct);
+        return productRepository.save(product);
     }
 
     // Delete a product

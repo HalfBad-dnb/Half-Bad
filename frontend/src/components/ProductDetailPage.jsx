@@ -13,12 +13,16 @@ const ProductDetailPage = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const response = await axios.get(`http://localhost:8081/products/${id}`, {
-          withCredentials: true,
+        const response = await axios.get(`http://localhost:8081/api/products/${id}`, {
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           }
         });
+        
+        if (!response.data) {
+          throw new Error('Product data is empty');
+        }
+
         const productData = response.data;
         
         // Parse colors and sizes from the database
@@ -34,7 +38,7 @@ const ProductDetailPage = () => {
           ...productData,
           colors: colors,
           sizes: sizes,
-          image_url: productData.image_url // Ensure image_url is passed through
+          imageUrl: productData.imageUrl // Use the correct property name
         });
 
         // Set default selections
@@ -44,7 +48,7 @@ const ProductDetailPage = () => {
         setLoading(false);
       } catch (error) {
         console.error('Error fetching product:', error);
-        setError('Failed to fetch product details');
+        setError(error.response?.data?.message || 'Failed to fetch product details');
         setLoading(false);
       }
     };
@@ -62,10 +66,20 @@ const ProductDetailPage = () => {
     // You can add logic here to update price or availability based on size if needed
   };
 
+  const getImageUrl = (product) => {
+    if (!product || !product.imageUrl) {
+      const name = (product?.name || '').toLowerCase();
+      if (name.includes('hoodie')) return '/images/hoodie.jpg';
+      if (name.includes('shoes')) return '/images/shoez.jpg';
+      return '/images/tshirt.jpg';
+    }
+    return product.imageUrl.startsWith('/') ? product.imageUrl : `/${product.imageUrl}`;
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-r from-[#4B0000] to-[#000000] text-white flex items-center justify-center">
-        <div className="text-2xl text-[#FFD700]">Loading...</div>
+        <div className="text-2xl">Loading...</div>
       </div>
     );
   }
@@ -78,7 +92,6 @@ const ProductDetailPage = () => {
     );
   }
 
-  const imageUrl = product.image_url || '/images/default-product.jpg';
   const colors = product.colors || ['Default'];
   const sizes = product.sizes || ['One Size'];
 
@@ -94,12 +107,15 @@ const ProductDetailPage = () => {
             <div className="space-y-8">
               <div className="bg-black bg-opacity-80 backdrop-blur-md p-8 rounded-2xl shadow-2xl border-2 border-[#FFD700]/20 transition-all duration-300 hover:border-[#FFD700]/40">
                 <img 
-                  src={`http://localhost:8081${product.image_url}`}
+                  src={getImageUrl(product)}
                   alt={product.name || 'Product Image'} 
                   className="w-full h-auto object-cover rounded-lg shadow-lg transition-transform duration-300 hover:scale-105"
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = '/images/default-product.jpg';
+                    const name = (product?.name || '').toLowerCase();
+                    if (name.includes('hoodie')) e.target.src = '/images/hoodie.jpg';
+                    else if (name.includes('shoes')) e.target.src = '/images/shoez.jpg';
+                    else e.target.src = '/images/tshirt.jpg';
                   }}
                 />
               </div>

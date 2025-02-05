@@ -11,11 +11,14 @@ const HomePage = () => {
   const [subscriptionStatus, setSubscriptionStatus] = useState('');
 
   // Get default image based on product name
-  const getDefaultImage = (productName) => {
-    const name = productName.toLowerCase();
-    if (name.includes('hoodie')) return '/images/hoodie.jpg';
-    if (name.includes('shoes')) return '/images/shoez.jpg';
-    return '/images/tshirt.jpg';
+  const getImageUrl = (product) => {
+    if (!product || !product.imageUrl) {
+      const name = (product?.name || '').toLowerCase();
+      if (name.includes('hoodie')) return '/images/hoodie.jpg';
+      if (name.includes('shoes')) return '/images/shoez.jpg';
+      return '/images/tshirt.jpg';
+    }
+    return product.imageUrl.startsWith('/') ? product.imageUrl : `/${product.imageUrl}`;
   };
 
   useEffect(() => {
@@ -39,10 +42,15 @@ const HomePage = () => {
     // Fetch products from the database
     const fetchProducts = async () => {
       try {
-        const response = await fetch('http://localhost:8081/products');
+        const response = await fetch('http://localhost:8081/api/products');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const data = await response.json();
         console.log('Featured products data:', data);
-        setFeaturedProducts(data.slice(0, 3));
+        // Ensure data is an array before using slice
+        const productsArray = Array.isArray(data) ? data : [];
+        setFeaturedProducts(productsArray.slice(0, 3));
       } catch (error) {
         console.error('Error fetching products:', error);
       }
@@ -115,19 +123,22 @@ const HomePage = () => {
         </div>
       </div>
 
-      <style jsx global>{`
-        @keyframes shine {
-          from {
-            transform: translateX(-100%);
+      {/* Keyframe animations */}
+      <style>
+        {`
+          @keyframes shine {
+            from {
+              transform: translateX(-100%);
+            }
+            to {
+              transform: translateX(100%);
+            }
           }
-          to {
-            transform: translateX(100%);
+          .animate-shine {
+            animation: shine 3s infinite linear;
           }
-        }
-        .animate-shine {
-          animation: shine 3s infinite linear;
-        }
-      `}</style>
+        `}
+      </style>
 
       {/* Content Sections */}
       <div className="relative z-10">
@@ -252,12 +263,15 @@ const HomePage = () => {
                   <Link to={`/products/${product.id}`} className="block">
                     <div className="mb-6 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg">
                       <img
-                        src={product.imageUrl || getDefaultImage(product.name)}
+                        src={getImageUrl(product)}
                         alt={product.name}
                         className="h-64 w-full object-cover object-center rounded-lg shadow-xl ring-4 ring-[#FFD700]/20"
                         onError={(e) => {
                           e.target.onerror = null;
-                          e.target.src = getDefaultImage(product.name);
+                          const name = product.name.toLowerCase();
+                          if (name.includes('hoodie')) e.target.src = '/images/hoodie.jpg';
+                          else if (name.includes('shoes')) e.target.src = '/images/shoez.jpg';
+                          else e.target.src = '/images/tshirt.jpg';
                         }}
                       />
                     </div>

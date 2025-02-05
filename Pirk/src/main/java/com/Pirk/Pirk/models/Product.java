@@ -28,7 +28,7 @@ public class Product {
     @Column(nullable = false)
     private Double price;
 
-    @Column
+    @Column(name = "image_url")
     private String imageUrl;
 
     @Column
