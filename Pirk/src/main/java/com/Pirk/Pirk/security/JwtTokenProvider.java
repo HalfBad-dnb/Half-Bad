@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 import javax.crypto.spec.SecretKeySpec;
 
 @Component
-public class JwtTokenProvider {
+public class JwtTokenProvider implements JwtTokenProviderInterface {
 
   @Value("${jwt.secret}")
   private String jwtSecret;
@@ -32,36 +32,50 @@ public class JwtTokenProvider {
   }
 
   // Generate JWT Token with username and roles using HS256
+  @Override
   public String generateToken(String username, List<String> roles) {
     return Jwts.builder()
         .setSubject(username)
         .claim("roles", roles)
         .setIssuedAt(new Date())
         .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration))
-        .signWith(new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256"), SignatureAlgorithm.HS256) // Sign with HS256
+        .signWith(new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256"), SignatureAlgorithm.HS256)
         .compact();
   }
 
   // Validate JWT Token
+  @Override
   public boolean validateToken(String token) {
     try {
-      jwtDecoder().decode(token); // Decode and validate token using NimbusJwtDecoder
-      return true; // If no exception is thrown, the token is valid
+      jwtDecoder().decode(token);
+      return true;
     } catch (Exception e) {
-      return false; // If there's an exception, return false (invalid token)
+      return false;
     }
   }
 
-  // Extract Username from Token
+  // Get username from token
+  @Override
   public String getUsernameFromToken(String token) {
-    Jwt jwt = jwtDecoder().decode(token); // Decode token using NimbusJwtDecoder
-    return jwt.getSubject(); // Extract the username (subject) from the decoded JWT
+    Jwt jwt = jwtDecoder().decode(token);
+    return jwt.getSubject();
   }
 
-  // Extract Authorities (Roles) from Token
+  // Get roles from token
+  @Override
+  public List<String> getRolesFromToken(String token) {
+    Jwt jwt = jwtDecoder().decode(token);
+    @SuppressWarnings("unchecked")
+    List<String> roles = (List<String>) jwt.getClaim("roles");
+    return roles;
+  }
+
+  // Convert roles to authorities
+  @Override
   public List<SimpleGrantedAuthority> getAuthoritiesFromToken(String token) {
-    Jwt jwt = jwtDecoder().decode(token); // Decode token
-    List<String> roles = jwt.getClaimAsStringList("roles"); // Get roles from the token
-    return roles.stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList()); // Convert roles to authorities
+    List<String> roles = getRolesFromToken(token);
+    return roles.stream()
+               .map(SimpleGrantedAuthority::new)
+               .collect(Collectors.toList());
   }
 }

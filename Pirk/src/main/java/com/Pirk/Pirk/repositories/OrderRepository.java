@@ -9,4 +9,5 @@ import com.Pirk.Pirk.models.Order;
 @Repository
 public interface OrderRepository extends JpaRepository<Order, Long> {
     List<Order> findByUsername(String username);
+    List<Order> findByUserId(Long userId);
 }

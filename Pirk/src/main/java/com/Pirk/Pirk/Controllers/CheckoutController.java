@@ -1,32 +1,34 @@
-package com.Pirk.Pirk.Controllers;
+package com.Pirk.Pirk.controllers;
 
-import com.Pirk.Pirk.models.Cart;
 import com.Pirk.Pirk.models.Checkout;
-import com.Pirk.Pirk.models.User;
 import com.Pirk.Pirk.services.CheckoutService;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/checkout")
+@RequestMapping("/api/checkout")
 public class CheckoutController {
 
-    @Autowired
-    private CheckoutService checkoutService;
+    private final CheckoutService checkoutService;
 
-    // Create a checkout (POST request)
-    @PostMapping("/create")
-    public Checkout createCheckout(@RequestParam Long userId,
-                                   @RequestParam Long cartId,
-                                   @RequestParam String paymentMethod,
-                                   @RequestParam String shippingAddress) {
+    public CheckoutController(CheckoutService checkoutService) {
+        this.checkoutService = checkoutService;
+    }
 
-        User user = new User();  // You would retrieve the user from the database based on userId
-        user.setId(userId);
+    @PostMapping
+    public ResponseEntity<Checkout> createCheckout(@RequestBody Checkout checkout) {
+        return ResponseEntity.ok(checkoutService.createCheckout(checkout));
+    }
 
-        Cart cart = new Cart();  // You would retrieve the cart from the database based on cartId
-        cart.setId(cartId);
+    @GetMapping("/{id}")
+    public ResponseEntity<Checkout> getCheckout(@PathVariable Long id) {
+        return ResponseEntity.ok(checkoutService.getCheckoutById(id));
+    }
 
-        return checkoutService.createCheckout(user, cart, paymentMethod, shippingAddress);
+    @PutMapping("/{id}/status")
+    public ResponseEntity<Checkout> updateCheckoutStatus(
+            @PathVariable Long id,
+            @RequestParam String status) {
+        return ResponseEntity.ok(checkoutService.updateCheckoutStatus(id, status));
     }
 }

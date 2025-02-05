@@ -1,4 +1,4 @@
-package com.Pirk.Pirk.Controllers;
+package com.Pirk.Pirk.controllers;
 
 import java.util.List;
 import java.util.Optional;
@@ -8,7 +8,7 @@ import com.Pirk.Pirk.dto.LoginRequest;
 import com.Pirk.Pirk.dto.RegisterRequest;
 import com.Pirk.Pirk.models.User;
 import com.Pirk.Pirk.repositories.UserRepository;
-import com.Pirk.Pirk.security.JwtTokenProvider;
+import com.Pirk.Pirk.security.JwtTokenProviderInterface;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -25,9 +25,9 @@ public class AuthController {
 
   private final UserRepository userRepository;
   private final PasswordEncoder passwordEncoder;
-  private final JwtTokenProvider jwtUtils;
+  private final JwtTokenProviderInterface jwtUtils;
 
-  public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProvider jwtUtils) {
+  public AuthController(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtTokenProviderInterface jwtUtils) {
     this.userRepository = userRepository;
     this.passwordEncoder = passwordEncoder;
     this.jwtUtils = jwtUtils;

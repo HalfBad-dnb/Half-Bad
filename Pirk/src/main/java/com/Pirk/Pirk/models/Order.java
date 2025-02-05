@@ -28,7 +28,13 @@ public class Order {
     private PaymentInfo paymentInfo;
 
     @Column(nullable = false)
-    private Boolean emailSent = false;  // ✅ Fix: Ensure it is never null
+    private Boolean emailSent = false;  // Fix: Ensure it is never null
+
+    @Column(nullable = false)
+    private Long userId;
+
+    @Column(nullable = false)
+    private String status = "PENDING";
 
     // Getters and Setters
     public Long getId() {
@@ -93,5 +99,21 @@ public class Order {
 
     public void setEmailSent(Boolean emailSent) {
         this.emailSent = emailSent;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
     }
 }

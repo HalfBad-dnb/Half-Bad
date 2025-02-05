@@ -1,39 +1,59 @@
-package com.Pirk.Pirk.Controllers;
+package com.Pirk.Pirk.controllers;
 
+import com.Pirk.Pirk.models.Cart;
 import com.Pirk.Pirk.models.CartItem;
 import com.Pirk.Pirk.services.CartService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.Pirk.Pirk.services.CartItemService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
-@RequestMapping("/cart")
+@RequestMapping("/api/cart")
 public class CartController {
 
     private final CartService cartService;
+    private final CartItemService cartItemService;
 
-    @Autowired
-    public CartController(CartService cartService) {
+    public CartController(CartService cartService, CartItemService cartItemService) {
         this.cartService = cartService;
+        this.cartItemService = cartItemService;
     }
 
-    // Endpoint to get cart items for a given userId
-    @GetMapping("/getCartItems/{userId}")
-    public Iterable<CartItem> getCartItems(@PathVariable Long userId) {
-        return cartService.getCartItems(userId);  // Ensure userId is passed
+    @GetMapping("/{userId}")
+    public ResponseEntity<Cart> getCart(@PathVariable Long userId) {
+        return ResponseEntity.ok(cartService.getCartByUserId(userId));
     }
 
-    // Endpoint to add a product to the user's cart
-    @PostMapping("/addToCart")
-    public void addToCart(@RequestParam Long userId, @RequestParam Long productId,
-                          @RequestParam int quantity) {
-        // Call addToCart without price as it's fetched from the Product
-        cartService.addToCart(userId, productId, quantity);  
+    @PostMapping("/{cartId}/items")
+    public ResponseEntity<CartItem> addItemToCart(
+            @PathVariable Long cartId,
+            @RequestBody CartItem cartItem) {
+        return ResponseEntity.ok(cartItemService.addItemToCart(cartId, cartItem));
     }
 
-    // Endpoint to remove a product from the user's cart
-    @DeleteMapping("/removeFromCart/{userId}/{cartItemId}")
-    public void removeFromCart(@PathVariable Long userId, @PathVariable Long cartItemId) {
-        // Pass userId and cartItemId to the service method
-        cartService.removeFromCart(userId, cartItemId);  
+    @PutMapping("/items/{itemId}")
+    public ResponseEntity<CartItem> updateCartItem(
+            @PathVariable Long itemId,
+            @RequestBody CartItem cartItem) {
+        return ResponseEntity.ok(cartItemService.updateCartItem(itemId, cartItem));
+    }
+
+    @DeleteMapping("/items/{itemId}")
+    public ResponseEntity<Void> removeCartItem(@PathVariable Long itemId) {
+        cartItemService.removeCartItem(itemId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/{cartId}/items")
+    public ResponseEntity<List<CartItem>> getCartItems(@PathVariable Long cartId) {
+        return ResponseEntity.ok(cartItemService.getCartItems(cartId));
+    }
+
+    @DeleteMapping("/{cartId}/clear")
+    public ResponseEntity<Void> clearCart(@PathVariable Long cartId) {
+        cartService.clearCart(cartId);
+        return ResponseEntity.ok().build();
     }
 }

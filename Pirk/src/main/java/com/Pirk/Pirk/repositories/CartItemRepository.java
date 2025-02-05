@@ -1,14 +1,11 @@
 package com.Pirk.Pirk.repositories;
 
 import com.Pirk.Pirk.models.CartItem;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.stereotype.Repository;
-
+import org.springframework.data.repository.CrudRepository;
+import java.util.List;
 import java.util.Optional;
 
-@Repository
-public interface CartItemRepository extends JpaRepository<CartItem, Long> {
-
-    // Custom query to find a CartItem by Cart ID and Product ID
+public interface CartItemRepository extends CrudRepository<CartItem, Long> {
     Optional<CartItem> findByCart_IdAndProduct_Id(Long cartId, Long productId);
+    List<CartItem> findByCartId(Long cartId);
 }

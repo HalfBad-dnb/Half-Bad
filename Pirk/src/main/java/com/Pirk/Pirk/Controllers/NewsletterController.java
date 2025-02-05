@@ -1,41 +1,36 @@
-package com.Pirk.Pirk.Controllers;
+package com.Pirk.Pirk.controllers;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 import com.Pirk.Pirk.models.Newsletter;
 import com.Pirk.Pirk.repositories.NewsletterRepository;
-
-import jakarta.validation.Valid;
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
+@RequestMapping("/api/newsletter")
 public class NewsletterController {
 
-    @Autowired
-    private NewsletterRepository newsletterRepository;
+    private final NewsletterRepository newsletterRepository;
+
+    public NewsletterController(NewsletterRepository newsletterRepository) {
+        this.newsletterRepository = newsletterRepository;
+    }
 
     @PostMapping("/subscribe")
-    public ResponseEntity<?> subscribe(@Valid @RequestBody Newsletter subscription) {
-        Map<String, String> response = new HashMap<>();
-        
-        try {
-            // Check if email already exists
-            if (newsletterRepository.existsByEmail(subscription.getEmail())) {
-                response.put("message", "This email is already subscribed!");
-                return ResponseEntity.badRequest().body(response);
-            }
-
-            // Save new subscription
-            newsletterRepository.save(subscription);
-            response.put("message", "Successfully subscribed to the newsletter!");
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            response.put("message", "Failed to subscribe: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+    public ResponseEntity<Newsletter> subscribe(@RequestBody Newsletter newsletter) {
+        if (newsletterRepository.findByEmail(newsletter.getEmail()).isPresent()) {
+            return ResponseEntity.badRequest().build();
         }
+        return ResponseEntity.ok(newsletterRepository.save(newsletter));
+    }
+
+    @DeleteMapping("/unsubscribe")
+    public ResponseEntity<Void> unsubscribe(@RequestParam String email) {
+        newsletterRepository.findByEmail(email).ifPresent(newsletterRepository::delete);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/status")
+    public ResponseEntity<Boolean> checkSubscriptionStatus(@RequestParam String email) {
+        return ResponseEntity.ok(newsletterRepository.findByEmail(email).isPresent());
     }
 }

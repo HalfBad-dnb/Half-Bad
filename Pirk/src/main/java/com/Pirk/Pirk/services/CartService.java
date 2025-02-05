@@ -97,6 +97,26 @@ public class CartService {
                 .orElseThrow(() -> new RuntimeException("Product not found"));
     }
 
+    // Get cart by user ID
+    public Cart getCartByUserId(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        return cartRepository.findByUser(user)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUser(user);
+                    return cartRepository.save(newCart);
+                });
+    }
+
+    // Clear the cart
+    public void clearCart(Long cartId) {
+        Cart cart = cartRepository.findById(cartId)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+        cart.getCartItems().clear();
+        cartRepository.save(cart);
+    }
+
     // Helper method to find CartItem by product ID
     private CartItem findCartItem(Cart cart, Long productId) {
         return cart.getCartItems().stream()

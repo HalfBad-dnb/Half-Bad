@@ -18,9 +18,20 @@ public class UserService {
   }
 
   public User registerUser(String username, String email, String password) {
+    // Validate input parameters
+    if (username == null || username.trim().isEmpty()) {
+      throw new IllegalArgumentException("Username cannot be null or empty");
+    }
+    if (email == null || email.trim().isEmpty()) {
+      throw new IllegalArgumentException("Email cannot be null or empty");
+    }
+    if (password == null || password.trim().isEmpty()) {
+      throw new IllegalArgumentException("Password cannot be null or empty");
+    }
+
     User user = new User();
-    user.setUsername(username);
-    user.setEmail(email);
+    user.setUsername(username.trim());
+    user.setEmail(email.trim());
     user.setPassword(passwordEncoder.encode(password));
     user.setRole(User.Role.USER); // Default role is USER
     return userRepository.save(user);
@@ -28,6 +39,9 @@ public class UserService {
 
   // Method to fetch a user by their ID
   public User getUserById(Long userId) {
+    if (userId == null) {
+      throw new IllegalArgumentException("User ID cannot be null");
+    }
     return userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
   }

@@ -29,6 +29,12 @@ public class Product {
     @Column
     private String imageUrl;
 
+    @Column
+    private String category;
+
+    @Column
+    private Integer stock;
+
     @ElementCollection
     @CollectionTable(name = "product_colors", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "color")
@@ -43,13 +49,15 @@ public class Product {
     public Product() {}
 
     // Constructor with parameters
-    public Product(String name, String description, Double price, String imageUrl, List<String> colors, List<String> sizes) {
+    public Product(String name, String description, Double price, String imageUrl, String category, List<String> colors, List<String> sizes) {
         this.name = name;
         this.description = description;
         this.price = price;
         this.imageUrl = imageUrl;
+        this.category = category;
         this.colors = colors;
         this.sizes = sizes;
+        this.stock = 0; // Default stock value
     }
 
     // Getters and setters
@@ -91,6 +99,22 @@ public class Product {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
+    }
+
+    public Integer getStock() {
+        return stock;
+    }
+
+    public void setStock(Integer stock) {
+        this.stock = stock;
     }
 
     public List<String> getColors() {

@@ -5,24 +5,46 @@ import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class PaymentInfoService {
 
-    @Autowired
-    private PaymentInfoRepository paymentInfoRepository;
+    private final PaymentInfoRepository paymentInfoRepository;
 
-    // Method to retrieve a PaymentInfo by ID
+    @Autowired
+    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository) {
+        this.paymentInfoRepository = paymentInfoRepository;
+    }
+
     public Optional<PaymentInfo> getPaymentInfo(Long id) {
         return paymentInfoRepository.findById(id);
     }
 
-    // Method to retrieve all PaymentInfo entries
     public List<PaymentInfo> getAllPaymentInfo() {
         return paymentInfoRepository.findAll();
     }
 
-    // You can add more methods as needed
+    public PaymentInfo processPayment(PaymentInfo paymentInfo) {
+        // Here you would typically integrate with a payment gateway
+        // For now, we'll just save the payment info
+        return paymentInfoRepository.save(paymentInfo);
+    }
+
+    public PaymentInfo updatePaymentInfo(Long id, PaymentInfo paymentInfo) {
+        PaymentInfo existingPaymentInfo = getPaymentInfo(id)
+            .orElseThrow(() -> new RuntimeException("Payment info not found"));
+        
+        // Update the fields
+        existingPaymentInfo.setCardNumber(paymentInfo.getCardNumber());
+        existingPaymentInfo.setExpirationDate(paymentInfo.getExpirationDate());
+        existingPaymentInfo.setCvv(paymentInfo.getCvv());
+        
+        return paymentInfoRepository.save(existingPaymentInfo);
+    }
+
+    public void deletePaymentInfo(Long id) {
+        paymentInfoRepository.deleteById(id);
+    }
 }

@@ -18,9 +18,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
   private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-  private final JwtTokenProvider jwtTokenProvider;
+  private final JwtTokenProviderInterface jwtTokenProvider;
 
-  public JwtAuthenticationFilter(JwtTokenProvider jwtTokenProvider) {
+  public JwtAuthenticationFilter(JwtTokenProviderInterface jwtTokenProvider) {
     this.jwtTokenProvider = jwtTokenProvider;
   }
 

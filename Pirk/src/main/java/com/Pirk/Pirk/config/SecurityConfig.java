@@ -5,14 +5,17 @@ import javax.crypto.spec.SecretKeySpec;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import com.Pirk.Pirk.security.JwtAuthenticationFilter;
 
@@ -31,28 +34,31 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable()) // Disable CSRF for simplicity
+            .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 var corsConfig = new org.springframework.web.cors.CorsConfiguration();
-                corsConfig.setAllowedOrigins(List.of("http://localhost:5173")); // Frontend origin
+                corsConfig.setAllowedOrigins(List.of("http://localhost:5173"));
                 corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type", "*")); // Allow Authorization header
-                corsConfig.setAllowCredentials(true); // Allow credentials
+                corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type", "*"));
+                corsConfig.setAllowCredentials(true);
                 return corsConfig;
             }))
             .authorizeHttpRequests(auth -> auth
-                // Allow public access to products and other specified paths
-                .requestMatchers("/auth/**", "/products/**", "/api/order/submit", "/api/subscribe").permitAll() // These endpoints are now public
-                .anyRequest().authenticated() // All other requests require authentication
+                .requestMatchers("/auth/**", "/products/**", "/api/order/submit", "/api/subscribe").permitAll()
+                .anyRequest().authenticated()
+            )
+            .exceptionHandling(exc -> exc
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .logout(logout -> logout
-                .logoutUrl("/logout") // URL to trigger logout
-                .logoutSuccessUrl("/") // Redirect after successful logout
-                .invalidateHttpSession(true) // Invalidate the session
-                .deleteCookies("JSESSIONID") // Optionally delete session cookie
-                .permitAll() // Allow anyone to log out
+                .logoutUrl("/logout")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    response.setStatus(HttpStatus.OK.value());
+                })
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
             )
-            // Add the JWT Authentication filter before UsernamePasswordAuthenticationFilter
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
