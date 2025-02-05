@@ -2,9 +2,11 @@ package com.Pirk.Pirk.controllers;
 
 import com.Pirk.Pirk.models.User;
 import com.Pirk.Pirk.services.ProfileService;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/profile")
@@ -17,8 +19,14 @@ public class ProfileController {
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<User> getUserProfile(@PathVariable Long userId) {
-        return ResponseEntity.ok(profileService.getUserProfile(userId));
+    public ResponseEntity<?> getUserProfile(@PathVariable Long userId) {
+        try {
+            User user = profileService.getUserProfile(userId);
+            return ResponseEntity.ok(user);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("error", e.getMessage()));
+        }
     }
 
     @PutMapping("/{userId}")

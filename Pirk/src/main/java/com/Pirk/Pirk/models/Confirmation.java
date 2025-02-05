@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "confirmations")
 public class Confirmation {
 
     @Id
@@ -20,6 +21,12 @@ public class Confirmation {
     private boolean confirmed;
 
     private LocalDateTime confirmationTime;
+
+    @Column(columnDefinition = "TEXT")
+    private String paymentInfo;
+
+    @Column(columnDefinition = "TEXT")
+    private String shippingInfo;
 
     public Confirmation() {
         this.confirmationTime = LocalDateTime.now();  // Set default confirmation time to now
@@ -65,5 +72,21 @@ public class Confirmation {
 
     public void setConfirmationTime(LocalDateTime confirmationTime) {
         this.confirmationTime = confirmationTime;
+    }
+
+    public String getPaymentInfo() {
+        return paymentInfo;
+    }
+
+    public void setPaymentInfo(String paymentInfo) {
+        this.paymentInfo = paymentInfo;
+    }
+
+    public String getShippingInfo() {
+        return shippingInfo;
+    }
+
+    public void setShippingInfo(String shippingInfo) {
+        this.shippingInfo = shippingInfo;
     }
 }

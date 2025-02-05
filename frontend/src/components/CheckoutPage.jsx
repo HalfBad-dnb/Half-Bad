@@ -41,25 +41,44 @@ const CheckoutPage = () => {
     const cartItems = JSON.parse(sessionStorage.getItem("cartItems")) || [];
 
     const orderData = {
-      shippingInfo,
-      paymentInfo: { method: "Credit Card", status: "Pending" },
-      cartItems,
+      shippingInfo: {
+        ...shippingInfo,
+        email: shippingInfo.email || '',
+        phone: shippingInfo.phone || ''
+      },
+      cartItems: cartItems.map(item => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: parseFloat(item.price)
+      })),
       totalAmount: parseFloat(orderTotal),
+      status: 'PENDING'
     };
 
     console.log("Sending Order Data:", orderData);
 
     try {
-      const response = await fetch("http://localhost:8081/api/order/submit", {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in to proceed with checkout');
+        navigate('/login');
+        return;
+      }
+
+      const response = await fetch("http://localhost:8081/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderData),
-        credentials: "include",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(orderData)
       });
 
       if (response.ok) {
         const order = await response.json();
         console.log("Order confirmed:", order);
+        // Store the order ID for the payment process
+        sessionStorage.setItem('orderId', order.id);
         navigate("/payment");
       } else {
         const errorText = await response.text();

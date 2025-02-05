@@ -29,7 +29,12 @@ function ProfilePage() {
 
     const fetchOrders = async () => {
       try {
-        const response = await axios.get("http://localhost:8081/api/order/user-orders", {
+        const userId = user?.id; // Get user ID from the user state
+        if (!userId) {
+          console.error("User ID not available");
+          return;
+        }
+        const response = await axios.get(`http://localhost:8081/api/orders/user/${userId}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },

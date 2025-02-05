@@ -8,7 +8,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "users")
+@Table(name = "users", 
+    uniqueConstraints = {
+        @UniqueConstraint(columnNames = "username"),
+        @UniqueConstraint(columnNames = "email")
+    })
 public class User {
 
     @Id
@@ -17,20 +21,22 @@ public class User {
 
     @NotNull
     @Size(min = 3, max = 50)
-    @Column(unique = true)
+    @Column(nullable = false)
     private String username;
 
     @NotNull
     @Size(min = 8)
-    @JsonIgnore // Don't include password in JSON responses
+    @Column(nullable = false)
+    @JsonIgnore 
     private String password;
 
     @NotNull
     @Email
-    @Column(unique = true)
+    @Column(nullable = false)
     private String email;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
 
     // Profile Fields
@@ -48,19 +54,24 @@ public class User {
     
     @Column(length = 20)
     private String phoneNumber;
-    
-    @JsonIgnore
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+
+    @Column(name = "last_password_change")
     private LocalDateTime lastPasswordChange;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
     
     @Column(length = 1000)
     private String preferences; // Store as JSON string
-    
-    private boolean isActive = true;
-    
-    @Column(updatable = false)
-    private LocalDateTime createdAt;
-    
-    private LocalDateTime updatedAt;
 
     @PrePersist
     protected void onCreate() {
@@ -112,14 +123,27 @@ public class User {
 
     public LocalDateTime getLastPasswordChange() { return lastPasswordChange; }
 
+    public LocalDateTime getLastLoginAt() {
+        return lastLoginAt;
+    }
+
+    public void setLastLoginAt(LocalDateTime lastLoginAt) {
+        this.lastLoginAt = lastLoginAt;
+    }
+
     public String getPreferences() { return preferences; }
     public void setPreferences(String preferences) { this.preferences = preferences; }
 
-    public boolean isActive() { return isActive; }
-    public void setActive(boolean active) { isActive = active; }
+    public Boolean getIsActive() { return isActive; }
+    public void setIsActive(Boolean active) { this.isActive = active; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
     public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public void setLastPasswordChange(LocalDateTime lastPasswordChange) { this.lastPasswordChange = lastPasswordChange; }
 
     public enum Role {
         USER, ADMIN;

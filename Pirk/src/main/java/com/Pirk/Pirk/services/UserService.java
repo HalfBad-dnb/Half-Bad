@@ -45,4 +45,12 @@ public class UserService {
     return userRepository.findById(userId)
             .orElseThrow(() -> new RuntimeException("User not found"));
   }
+
+  public User getUserByUsername(String username) {
+    if (username == null || username.trim().isEmpty()) {
+      throw new IllegalArgumentException("Username cannot be null or empty");
+    }
+    return userRepository.findByUsername(username)
+            .orElseThrow(() -> new RuntimeException("User not found with username: " + username));
+  }
 }

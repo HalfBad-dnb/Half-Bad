@@ -38,8 +38,11 @@ public class ProfileService {
     }
 
     public User getUserProfile(Long id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        Optional<User> user = userRepository.findById(id);
+        if (user.isEmpty()) {
+            throw new RuntimeException("User not found with ID: " + id);
+        }
+        return user.get();
     }
 
     public User updateUser(Long id, User updatedUser) {

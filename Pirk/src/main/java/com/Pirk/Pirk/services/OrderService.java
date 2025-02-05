@@ -1,15 +1,14 @@
 package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.Order;
-import com.Pirk.Pirk.models.PaymentInfo;
-import com.Pirk.Pirk.repositories.OrderRepository;
-import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
+
+import com.Pirk.Pirk.repositories.OrderRepository;
 
 @Service
 public class OrderService {
@@ -19,41 +18,33 @@ public class OrderService {
     @Autowired
     private OrderRepository orderRepository;
 
-    @Autowired
-    private PaymentInfoRepository paymentInfoRepository;
-
-    @Transactional
-    public void submitOrder(Order order) {
-        // Validate order (optional but recommended)
-        if (order == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-
-        // Retrieve payment info from the order
-        PaymentInfo paymentInfo = order.getPaymentInfo();
-        
-        if (paymentInfo != null) {
-            // Save the PaymentInfo object
-            logger.info("Saving payment information...");
-            paymentInfoRepository.save(paymentInfo);
-            
-            // Associate the saved PaymentInfo object with the Order
-            order.setPaymentInfo(paymentInfo);
-        }
-
-        // Save the Order object
-        logger.info("Saving order...");
-        orderRepository.save(order);
-
-        logger.info("Order submission completed successfully.");
-    }
-
     @Transactional
     public Order createOrder(Order order) {
+        // Validate order
         if (order == null) {
             throw new IllegalArgumentException("Order cannot be null");
         }
-        return orderRepository.save(order);
+        if (order.getShippingInfo() == null) {
+            throw new IllegalArgumentException("Shipping information is required");
+        }
+        if (order.getCartItems() == null || order.getCartItems().isEmpty()) {
+            throw new IllegalArgumentException("Order must contain at least one item");
+        }
+
+        try {
+            // Set initial order status
+            order.setStatus("PENDING");
+            
+            // Save the Order
+            logger.info("Creating new order...");
+            Order savedOrder = orderRepository.save(order);
+            logger.info("Order created successfully with ID: {}", savedOrder.getId());
+            
+            return savedOrder;
+        } catch (Exception e) {
+            logger.error("Error creating order: {}", e.getMessage());
+            throw new RuntimeException("Failed to create order: " + e.getMessage());
+        }
     }
 
     public Order getOrderById(Long id) {

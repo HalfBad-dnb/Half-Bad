@@ -2,7 +2,11 @@ package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
 
+/**
+ * Represents a checkout in the Pirk system.
+ */
 @Entity
+@Table(name = "checkouts")
 public class Checkout {
 
     @Id
@@ -22,6 +26,10 @@ public class Checkout {
     private String shippingAddress;  // Shipping address for the order
     private String orderStatus;  // Order status (e.g., "Pending", "Completed")
     private String paymentStatus;  // Payment status (e.g., "Paid", "Pending")
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "payment_info_id")
+    private PaymentInfo paymentInfo;  // Payment information
 
     // Default constructor
     public Checkout() {
@@ -97,5 +105,14 @@ public class Checkout {
 
     public void setPaymentStatus(String paymentStatus) {
         this.paymentStatus = paymentStatus;
+    }
+
+    // Getter and Setter for paymentInfo
+    public PaymentInfo getPaymentInfo() {
+        return paymentInfo;
+    }
+
+    public void setPaymentInfo(PaymentInfo paymentInfo) {
+        this.paymentInfo = paymentInfo;
     }
 }

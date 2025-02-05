@@ -1,7 +1,11 @@
 package com.Pirk.Pirk.controllers;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import com.Pirk.Pirk.dto.JwtResponse;
 import com.Pirk.Pirk.dto.LoginRequest;
@@ -34,40 +38,75 @@ public class AuthController {
   }
 
   @PostMapping("/register")
-  public String register(@Valid @RequestBody RegisterRequest request) {
-    // Check if username already exists
-    if (userRepository.findByUsername(request.getUsername()).isPresent()) {
-      return "Username already exists";
+  public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    try {
+      // Check if username already exists
+      if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        return ResponseEntity.badRequest().body("Username already exists");
+      }
+
+      // Check if email already exists
+      if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+        return ResponseEntity.badRequest().body("Email already exists");
+      }
+
+      // Create and save new user
+      User user = new User();
+      user.setUsername(request.getUsername());
+      user.setEmail(request.getEmail());
+      user.setPassword(passwordEncoder.encode(request.getPassword()));
+      user.setRole(User.Role.USER);
+      user.setIsActive(true);
+      user.setCreatedAt(LocalDateTime.now());
+      user.setUpdatedAt(LocalDateTime.now());
+      user.setLastPasswordChange(LocalDateTime.now());
+
+      try {
+        user = userRepository.save(user);
+      } catch (Exception e) {
+        return ResponseEntity.badRequest().body("Failed to save user: " + e.getMessage());
+      }
+
+      // Generate token for the new user
+      String token = jwtUtils.generateToken(user.getUsername(), List.of(user.getRole().toString()));
+      return ResponseEntity.ok(new JwtResponse(token));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
     }
-
-    // Check if email already exists
-    if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-      return "Email already exists";
-    }
-
-    // Create and save new user
-    User user = new User();
-    user.setUsername(request.getUsername());
-    user.setEmail(request.getEmail());
-    user.setPassword(passwordEncoder.encode(request.getPassword()));
-    user.setRole(User.Role.USER);
-    userRepository.save(user);
-
-    return "User registered successfully!";
   }
 
   @PostMapping("/login")
-  public JwtResponse login(@Valid @RequestBody LoginRequest request) {
-    Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
+  public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
+    try {
+      Optional<User> userOptional = userRepository.findByUsername(request.getUsername());
 
-    // Check if user exists and password is correct
-    if (userOptional.isEmpty() || !passwordEncoder.matches(request.getPassword(), userOptional.get().getPassword())) {
-      throw new RuntimeException("Invalid credentials");
+      if (userOptional.isEmpty()) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+      }
+
+      User user = userOptional.get();
+
+      // Check if password matches
+      if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid username or password");
+      }
+      
+      // Check if user is active
+      if (!user.getIsActive()) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Account is disabled");
+      }
+
+      // Update last login time
+      user.setLastLoginAt(LocalDateTime.now());
+      userRepository.save(user);
+
+      // Generate and return JWT token
+      String token = jwtUtils.generateToken(user.getUsername(), List.of(user.getRole().toString()));
+      return ResponseEntity.ok(new JwtResponse(token));
+    } catch (Exception e) {
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Login failed: " + e.getMessage());
     }
-
-    // Generate and return JWT token
-    String token = jwtUtils.generateToken(userOptional.get().getUsername(), List.of(userOptional.get().getRole().toString()));
-    return new JwtResponse(token);
   }
 
   // Handle exceptions specifically for registration or login errors

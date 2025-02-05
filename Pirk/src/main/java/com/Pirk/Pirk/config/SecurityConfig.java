@@ -37,17 +37,20 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 var corsConfig = new org.springframework.web.cors.CorsConfiguration();
-                corsConfig.setAllowedOrigins(List.of("http://localhost:5173"));
+                corsConfig.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
                 corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-                corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type", "*"));
+                corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+                corsConfig.setExposedHeaders(List.of("Authorization"));
                 corsConfig.setAllowCredentials(true);
+                corsConfig.setMaxAge(3600L);
                 return corsConfig;
             }))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/products/**", "/api/order/submit", "/api/subscribe").permitAll()
+                .requestMatchers("/auth/**", "/products/**", "/api/products/**", "/error").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
-            .exceptionHandling(exc -> exc
+            .exceptionHandling(ex -> ex
                 .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .logout(logout -> logout

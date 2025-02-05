@@ -47,4 +47,11 @@ public class CheckoutService {
         checkout.setOrderStatus(status);
         return checkoutRepository.save(checkout);
     }
+
+    public Checkout updateCheckout(Checkout checkout) {
+        if (checkout == null || checkout.getId() == null) {
+            throw new IllegalArgumentException("Checkout cannot be null and must have an ID");
+        }
+        return checkoutRepository.save(checkout);
+    }
 }

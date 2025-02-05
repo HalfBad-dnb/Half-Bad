@@ -131,19 +131,24 @@ function AppContent() {
 
         <main className="pt-20">
           <Routes>
+            {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
-            <Route path="/products/:id" element={<ProductDetailPage />} /> {/* Corrected route for product details */}
+            <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/music" element={<MusicPage />} />
             <Route path="/events" element={<EventsPage />} />
+            <Route path="/cart" element={<CartPage />} />
+
+            {/* Authentication Routes */}
             <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <RegistrationPage />} />
             <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
+
+            {/* Protected Routes */}
             <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/payment" element={<PaymentPage />} />
-            <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+            <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" />} />
+            <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
+            <Route path="/order-confirmation" element={isAuthenticated ? <OrderConfirmationPage /> : <Navigate to="/login" />} />
           </Routes>
         </main>
       </div>

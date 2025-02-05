@@ -8,9 +8,11 @@ import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Table;
 import java.util.List;
 
 @Entity
+@Table(name = "products")
 public class Product {
 
     @Id

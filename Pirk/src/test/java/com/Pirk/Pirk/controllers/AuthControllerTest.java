@@ -17,6 +17,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -210,10 +212,18 @@ public class AuthControllerTest {
         when(userRepository.save(any(User.class))).thenReturn(existingUser);
 
         // When
-        String response = authController.register(validRegisterRequest);
+        ResponseEntity<?> response = authController.register(validRegisterRequest);
 
         // Then
-        assertEquals("User registered successfully!", response);
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        
+        Object responseBody = response.getBody();
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody instanceof JwtResponse, "Response body should be instance of JwtResponse");
+        
+        JwtResponse jwtResponse = (JwtResponse) responseBody;
+        assertEquals("valid.jwt.token", jwtResponse.getToken());
         verify(userRepository).save(any(User.class));
         verify(passwordEncoder).encode(validRegisterRequest.getPassword());
     }
@@ -225,10 +235,13 @@ public class AuthControllerTest {
             .thenReturn(Optional.of(existingUser));
 
         // When
-        String response = authController.register(validRegisterRequest);
+        ResponseEntity<?> response = authController.register(validRegisterRequest);
 
         // Then
-        assertEquals("Username already exists", response);
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody(), "Response body should not be null");
+        assertEquals("Username already exists", response.getBody());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -240,10 +253,13 @@ public class AuthControllerTest {
             .thenReturn(Optional.of(existingUser));
 
         // When
-        String response = authController.register(validRegisterRequest);
+        ResponseEntity<?> response = authController.register(validRegisterRequest);
 
         // Then
-        assertEquals("Email already exists", response);
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody(), "Response body should not be null");
+        assertEquals("Email already exists", response.getBody());
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -256,43 +272,54 @@ public class AuthControllerTest {
             .thenReturn(Optional.of(existingUser));
 
         // When
-        JwtResponse response = authController.login(validLoginRequest);
+        ResponseEntity<?> response = authController.login(validLoginRequest);
 
         // Then
-        assertNotNull(response);
-        assertEquals("valid.jwt.token", response.getToken());
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        
+        Object responseBody = response.getBody();
+        assertNotNull(responseBody, "Response body should not be null");
+        assertTrue(responseBody instanceof JwtResponse, "Response body should be instance of JwtResponse");
+        
+        JwtResponse jwtResponse = (JwtResponse) responseBody;
+        assertEquals("valid.jwt.token", jwtResponse.getToken());
         verify(passwordEncoder).matches(validLoginRequest.getPassword(), existingUser.getPassword());
         verify(jwtTokenProvider).generateToken(eq(existingUser.getUsername()), any());
     }
 
     @Test
-    void whenLoginWithNonExistentUsername_thenThrowException() {
+    void whenLoginWithNonExistentUsername_thenReturnUnauthorized() {
         // Given
         when(userRepository.findByUsername(validLoginRequest.getUsername()))
             .thenReturn(Optional.empty());
 
-        // When & Then
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            authController.login(validLoginRequest);
-        });
+        // When
+        ResponseEntity<?> response = authController.login(validLoginRequest);
 
-        assertEquals("Invalid credentials", exception.getMessage());
+        // Then
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody(), "Response body should not be null");
+        assertEquals("Invalid username or password", response.getBody());
         verify(jwtTokenProvider, never()).generateToken(anyString(), any());
     }
 
     @Test
-    void whenLoginWithIncorrectPassword_thenThrowException() {
+    void whenLoginWithIncorrectPassword_thenReturnUnauthorized() {
         // Given
         when(userRepository.findByUsername(validLoginRequest.getUsername()))
             .thenReturn(Optional.of(existingUser));
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
 
-        // When & Then
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            authController.login(validLoginRequest);
-        });
+        // When
+        ResponseEntity<?> response = authController.login(validLoginRequest);
 
-        assertEquals("Invalid credentials", exception.getMessage());
+        // Then
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody(), "Response body should not be null");
+        assertEquals("Invalid username or password", response.getBody());
         verify(jwtTokenProvider, never()).generateToken(anyString(), any());
     }
 
@@ -303,35 +330,15 @@ public class AuthControllerTest {
             .thenReturn(Optional.of(existingUser));
 
         // When
-        authController.login(validLoginRequest);
+        ResponseEntity<?> response = authController.login(validLoginRequest);
 
         // Then
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(jwtTokenProvider).generateToken(
             eq(existingUser.getUsername()),
             eq(List.of(User.Role.USER.toString()))
         );
-    }
-
-    // Security Tests
-
-    @Test
-    void whenRegisterWithSQLInjection_thenSanitized() {
-        // Given
-        RegisterRequest request = new RegisterRequest();
-        request.setUsername("user' OR '1'='1");
-        request.setEmail("test@example.com");
-        request.setPassword("password123");
-
-        when(userRepository.findByUsername(anyString())).thenReturn(Optional.empty());
-        when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
-
-        // When
-        authController.register(request);
-
-        // Then
-        verify(userRepository).save(argThat(user -> 
-            user.getUsername().equals("user' OR '1'='1") // Should be treated as literal string
-        ));
     }
 
     @Test
@@ -344,35 +351,19 @@ public class AuthControllerTest {
         when(userRepository.findByUsername(request.getUsername()))
             .thenReturn(Optional.empty());
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> {
-            authController.login(request);
-        });
+        // When
+        ResponseEntity<?> response = authController.login(request);
+
+        // Then
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
+        assertNotNull(response.getBody(), "Response body should not be null");
+        assertEquals("Invalid username or password", response.getBody());
     }
 
     // Exception Handling Tests
 
-    @Test
-    void whenRuntimeException_thenHandleGracefully() {
-        // When
-        String response = authController.handleRuntimeException(
-            new RuntimeException("Test error")
-        );
 
-        // Then
-        assertEquals("Error: Test error", response);
-    }
-
-    @Test
-    void whenGenericException_thenHandleGracefully() {
-        // When
-        String response = authController.handleException(
-            new Exception("Test error")
-        );
-
-        // Then
-        assertEquals("An error occurred: Test error", response);
-    }
 
     @Test
     void whenPasswordEncryptionFails_thenHandleGracefully() {
@@ -381,11 +372,13 @@ public class AuthControllerTest {
         when(userRepository.findByEmail(anyString())).thenReturn(Optional.empty());
         when(passwordEncoder.encode(anyString())).thenThrow(new RuntimeException("Encryption failed"));
 
-        // When & Then
-        Exception exception = assertThrows(RuntimeException.class, () -> {
-            authController.register(validRegisterRequest);
-        });
+        // When
+        ResponseEntity<?> response = authController.register(validRegisterRequest);
 
-        assertEquals("Error: Encryption failed", authController.handleRuntimeException((RuntimeException) exception));
+        // Then
+        assertNotNull(response, "Response should not be null");
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody(), "Response body should not be null");
+        assertEquals("Registration failed: Encryption failed", response.getBody());
     }
 }

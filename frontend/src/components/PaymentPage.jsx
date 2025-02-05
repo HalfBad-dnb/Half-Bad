@@ -56,7 +56,7 @@ const PaymentPage = () => {
     return year > currentYear || (year === currentYear && month >= currentMonth);
   };
 
-  const handlePaymentSubmit = (e) => {
+  const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     const { cardNumber, expirationDate, cvv } = paymentInfo;
 
@@ -64,11 +64,51 @@ const PaymentPage = () => {
     const isCvvValid = /^\d{3,4}$/.test(cvv);
     const isDateValid = isExpirationDateValid(expirationDate);
 
-    if (isCardValid && isCvvValid && isDateValid) {
-      sessionStorage.setItem('paymentInfo', JSON.stringify(paymentInfo));
-      navigate('/order-confirmation');
-    } else {
+    if (!(isCardValid && isCvvValid && isDateValid)) {
       setErrorMessage('Please fill in all payment details correctly.');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('Please log in to proceed with payment');
+        navigate('/login');
+        return;
+      }
+
+      const orderId = sessionStorage.getItem('orderId');
+      if (!orderId) {
+        alert('No order found. Please try again.');
+        navigate('/checkout');
+        return;
+      }
+
+      const response = await fetch('http://localhost:8081/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderId: orderId,
+          cardNumber: cardNumber.replace(/\s/g, ''),
+          expirationDate,
+          cvv
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        sessionStorage.setItem('paymentInfo', JSON.stringify(result));
+        navigate('/order-confirmation');
+      } else {
+        const error = await response.text();
+        setErrorMessage(error || 'Payment processing failed. Please try again.');
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setErrorMessage('An error occurred while processing your payment. Please try again.');
     }
   };
 

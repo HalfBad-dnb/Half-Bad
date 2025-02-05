@@ -11,10 +11,22 @@ function ProductsPage() {
 
   useEffect(() => {
     // Fetch product data
-    fetch('http://localhost:8081/products')
-      .then((response) => response.json())
-      .then((data) => setProducts(data))
-      .catch((error) => console.error('Error fetching products:', error));
+    fetch('http://localhost:8081/api/products')
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Check if data is paginated
+        const productsList = data.content || data;
+        setProducts(Array.isArray(productsList) ? productsList : []);
+      })
+      .catch((error) => {
+        console.error('Error fetching products:', error);
+        setProducts([]); // Set empty array on error
+      });
 
     // Show title and grid after a slight delay
     setTimeout(() => {

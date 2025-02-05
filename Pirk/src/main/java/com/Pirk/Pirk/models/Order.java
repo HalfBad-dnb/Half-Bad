@@ -2,6 +2,7 @@ package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @Table(name = "orders") // Using "orders" since "order" is a reserved word in SQL
@@ -35,6 +36,20 @@ public class Order {
 
     @Column(nullable = false)
     private String status = "PENDING";
+
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "order_id")
+    private List<CartItem> cartItems;
+
+    @PrePersist
+    protected void onCreate() {
+        orderDate = new Date();
+        orderNumber = generateOrderNumber();
+    }
+
+    private String generateOrderNumber() {
+        return "ORD-" + System.currentTimeMillis();
+    }
 
     // Getters and Setters
     public Long getId() {
@@ -115,5 +130,13 @@ public class Order {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public List<CartItem> getCartItems() {
+        return cartItems;
+    }
+
+    public void setCartItems(List<CartItem> cartItems) {
+        this.cartItems = cartItems;
     }
 }
