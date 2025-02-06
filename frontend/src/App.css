@@ -1,7 +1,6 @@
-/* Use Tailwind's @apply directive to apply utility classes */
-@import "tailwindcss/base";
-@import "tailwindcss/components";
-@import "tailwindcss/utilities";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Dust effect animation */
 @keyframes dustEffect {

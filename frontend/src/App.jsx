@@ -3,14 +3,14 @@ import "./App.css";
 import { BrowserRouter as Router, Route, Routes, NavLink, Navigate } from "react-router-dom";
 import HomePage from "./components/HomePage";
 import ProductsPage from "./components/ProductsPage";
-import ProductDetailPage from "./components/ProductDetailPage"; // Corrected import for ProductDetailPage
+import ProductDetailPage from "./components/ProductDetailPage"; 
 import RegistrationPage from "./components/RegistrationPage";
 import LoginPage from "./components/LoginPage";
 import ProfilePage from "./components/ProfilePage";
 import EditProfile from "./components/EditProfile";
 import CartPage from "./components/CartPage";
 import CheckoutPage from "./components/CheckoutPage";
-import PaymentPage from "./components/PaymentPage";
+import PaymentPage from "./components/PaymentPage"; // Ensure it's correctly imported
 import OrderConfirmationPage from "./components/OrderConfirmationPage";
 import MusicPage from "./components/MusicPage";
 import EventsPage from "./components/EventsPage";
@@ -59,12 +59,12 @@ function AppContent() {
   const { cart } = useCart();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);  // More concise way to check authentication
+    const token = sessionStorage.getItem("token");
+    setIsAuthenticated(!!token);
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    sessionStorage.removeItem("token");
     setIsAuthenticated(false);
   };
 

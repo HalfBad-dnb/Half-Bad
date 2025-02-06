@@ -1,163 +1,450 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '../Context/CartContext';
 
 const PaymentPage = () => {
   const navigate = useNavigate();
+  const { clearCart } = useCart();
+  const [orderTotal, setOrderTotal] = useState(0);
   const [paymentInfo, setPaymentInfo] = useState({
     cardNumber: '',
     expirationDate: '',
     cvv: '',
+    cardholderName: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
 
-  // Prevent redirection if checkout is not completed
   useEffect(() => {
     const shippingInfo = sessionStorage.getItem('shippingInfo');
-    if (!shippingInfo) {
-      navigate('/checkout'); // Redirect to checkout if no shipping info found
-    }
-  }, [navigate]);
+    const cart = sessionStorage.getItem('cart');
+    const token = sessionStorage.getItem('token');
 
-  const handleInputChange = (e) => {
-    let { name, value } = e.target;
-
-    if (name === 'cardNumber') {
-      value = value.replace(/\D/g, ''); // Remove non-numeric characters
-      if (value.length > 16) return;
+    if (!token) {
+      navigate('/login', { state: { returnUrl: '/payment' } });
+      return;
     }
 
-    if (name === 'cvv') {
-      value = value.replace(/\D/g, ''); // Allow only numbers
-      if (value.length > 4) return; // CVV should be 3 or 4 digits
-    }
-
-    if (name === 'expirationDate') {
-      value = value.replace(/[^0-9/]/g, ''); // Allow only numbers and '/'
-      if (value.length === 2 && !value.includes('/')) {
-        value += '/'; // Auto-insert slash after MM
-      }
-      if (value.length > 5) return; // Prevent extra input
-    }
-
-    setPaymentInfo((prevInfo) => ({
-      ...prevInfo,
-      [name]: value,
-    }));
-  };
-
-  const isExpirationDateValid = (expDate) => {
-    const regex = /^(0[1-9]|1[0-2])\/\d{2}$/;
-    if (!regex.test(expDate)) return false;
-
-    const [month, year] = expDate.split('/').map(Number);
-    const currentYear = new Date().getFullYear() % 100; // Get last two digits of the year
-    const currentMonth = new Date().getMonth() + 1;
-
-    return year > currentYear || (year === currentYear && month >= currentMonth);
-  };
-
-  const handlePaymentSubmit = async (e) => {
-    e.preventDefault();
-    const { cardNumber, expirationDate, cvv } = paymentInfo;
-
-    const isCardValid = /^\d{16}$/.test(cardNumber);
-    const isCvvValid = /^\d{3,4}$/.test(cvv);
-    const isDateValid = isExpirationDateValid(expirationDate);
-
-    if (!(isCardValid && isCvvValid && isDateValid)) {
-      setErrorMessage('Please fill in all payment details correctly.');
+    if (!shippingInfo || !cart) {
+      navigate('/checkout');
       return;
     }
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please log in to proceed with payment');
-        navigate('/login');
+      const cartData = JSON.parse(cart);
+      const shippingData = JSON.parse(shippingInfo);
+      
+      // Validate cart data
+      if (!Array.isArray(cartData) || cartData.length === 0) {
+        console.error('Invalid cart data');
+        navigate('/cart');
         return;
       }
 
-      const orderId = sessionStorage.getItem('orderId');
-      if (!orderId) {
-        alert('No order found. Please try again.');
+      // Calculate total
+      const total = cartData.reduce((sum, item) => {
+        const price = parseFloat(item.price || 0);
+        const quantity = parseInt(item.quantity || 0, 10);
+        if (isNaN(price) || isNaN(quantity)) {
+          console.warn('Invalid price or quantity for item:', item);
+          return sum;
+        }
+        return sum + (price * quantity);
+      }, 0);
+
+      setOrderTotal(total);
+      console.log('Order total:', total);
+
+      // Validate shipping data
+      if (!shippingData || !shippingData.name || !shippingData.address) {
+        console.error('Invalid shipping data');
         navigate('/checkout');
         return;
       }
 
-      const response = await fetch('http://localhost:8081/api/payments', {
+      // Generate order ID if not exists
+      let orderId = sessionStorage.getItem('orderId');
+      if (!orderId) {
+        orderId = Date.now(); // Just use timestamp as orderId
+        sessionStorage.setItem('orderId', orderId);
+      }
+    } catch (error) {
+      console.error('Error processing data:', error);
+      navigate('/cart');
+      return;
+    }
+
+    // Set up protection against browser back/forward
+    window.history.pushState(null, '', window.location.href);
+    window.onpopstate = function() {
+      window.history.pushState(null, '', window.location.href);
+    };
+
+    return () => {
+      window.onpopstate = null;
+    };
+  }, [navigate]);
+
+  const validateCardNumber = (number) => {
+    const cleaned = number.replace(/\s/g, '');
+    if (!/^\d{16}$/.test(cleaned)) {
+      return 'Card number must be exactly 16 digits';
+    }
+    return '';
+  };
+
+  const validateExpirationDate = (date) => {
+    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(date)) {
+      return 'Expiration date must be in MM/YY format';
+    }
+
+    const [month, year] = date.split('/');
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear() % 100;
+    const currentMonth = currentDate.getMonth() + 1;
+
+    if (parseInt(year) < currentYear || 
+       (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+      return 'Card has expired';
+    }
+
+    return '';
+  };
+
+  const validateCVV = (cvv) => {
+    if (!/^\d{3,4}$/.test(cvv)) {
+      return 'CVV must be 3 or 4 digits';
+    }
+    return '';
+  };
+
+  const validateCardholderName = (name) => {
+    if (!/^[a-zA-Z\s]{2,50}$/.test(name)) {
+      return 'Please enter a valid cardholder name';
+    }
+    return '';
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    let formattedValue = value;
+
+    if (name === 'cardNumber') {
+      // Format card number with spaces every 4 digits
+      formattedValue = value
+        .replace(/\D/g, '')
+        .replace(/(\d{4})(?=\d)/g, '$1 ')
+        .trim()
+        .slice(0, 19);
+    } else if (name === 'expirationDate') {
+      // Format expiration date as MM/YY
+      formattedValue = value
+        .replace(/\D/g, '')
+        .replace(/^(\d{2})/, '$1/')
+        .slice(0, 5);
+    } else if (name === 'cvv') {
+      // Only allow numbers for CVV
+      formattedValue = value.replace(/\D/g, '').slice(0, 4);
+    } else if (name === 'cardholderName') {
+      // Only allow letters and spaces for cardholder name
+      formattedValue = value.replace(/[^a-zA-Z\s]/g, '');
+    }
+
+    setPaymentInfo(prev => ({
+      ...prev,
+      [name]: formattedValue
+    }));
+
+    // Clear error for this field
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: ''
+    }));
+  };
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    let error = '';
+
+    switch (name) {
+      case 'cardholderName':
+        if (!value.trim()) {
+          error = 'Please enter a valid cardholder name';
+        }
+        break;
+      case 'cardNumber':
+        if (!value.trim()) {
+          error = 'Card number is required';
+        } else if (!/^\d{16}$/.test(value.replace(/\s/g, ''))) {
+          error = 'Card number must be exactly 16 digits';
+        }
+        break;
+      case 'expirationDate':
+        if (!value.trim()) {
+          error = 'Expiration date is required';
+        } else {
+          const [month, year] = value.split('/');
+          const currentDate = new Date();
+          const currentYear = currentDate.getFullYear() % 100;
+          const currentMonth = currentDate.getMonth() + 1;
+
+          if (parseInt(year) < currentYear || (parseInt(year) === currentYear && parseInt(month) < currentMonth)) {
+            error = 'Card has expired';
+          } else if (parseInt(month) < 1 || parseInt(month) > 12) {
+            error = 'Invalid month';
+          }
+        }
+        break;
+      case 'cvv':
+        if (!value.trim()) {
+          error = 'CVV is required';
+        } else if (!/^\d{3,4}$/.test(value)) {
+          error = 'CVV must be 3 or 4 digits';
+        }
+        break;
+      default:
+        break;
+    }
+
+    setFormErrors(prev => ({
+      ...prev,
+      [name]: error
+    }));
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    
+    // Prevent double submission
+    if (isSubmitting) return;
+
+    const { cardNumber, expirationDate, cvv, cardholderName } = paymentInfo;
+    
+    // Validate all fields
+    const errors = {
+      cardNumber: validateCardNumber(cardNumber),
+      expirationDate: validateExpirationDate(expirationDate),
+      cvv: validateCVV(cvv),
+      cardholderName: validateCardholderName(cardholderName)
+    };
+
+    if (Object.values(errors).some(error => error)) {
+      setFormErrors(errors);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setErrorMessage('');
+
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required');
+      }
+
+      const orderId = sessionStorage.getItem('orderId');
+      if (!orderId) {
+        throw new Error('No order found');
+      }
+
+      const cleanCardNumber = cardNumber.replace(/\s/g, '');
+      const last4 = cleanCardNumber.slice(-4);
+      
+      // Use hardcoded API URL for now - in production this should be in .env
+      const API_URL = 'http://localhost:8081';
+      const response = await fetch(`${API_URL}/api/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          orderId: orderId,
-          cardNumber: cardNumber.replace(/\s/g, ''),
+          cardNumber: cleanCardNumber,
           expirationDate,
-          cvv
+          cvv,
+          orderId: parseInt(sessionStorage.getItem('orderId'), 10),
+          paymentStatus: 'PENDING',
+          cardholderName: cardholderName.trim()
         })
       });
 
-      if (response.ok) {
-        const result = await response.json();
-        sessionStorage.setItem('paymentInfo', JSON.stringify(result));
-        navigate('/order-confirmation');
-      } else {
-        const error = await response.text();
-        setErrorMessage(error || 'Payment processing failed. Please try again.');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Payment failed');
       }
+
+      const data = await response.json();
+      
+      // Clear sensitive data
+      setPaymentInfo({
+        cardNumber: '',
+        expirationDate: '',
+        cvv: '',
+        cardholderName: ''
+      });
+      
+      // Clear cart and session data
+      clearCart();
+      sessionStorage.removeItem('cart');
+      sessionStorage.removeItem('orderId');
+      sessionStorage.removeItem('shippingInfo');
+      
+      navigate('/order-confirmation', { 
+        state: { 
+          orderId: data.orderId,
+          last4,
+          cardholderName
+        }
+      });
     } catch (error) {
-      console.error('Payment error:', error);
-      setErrorMessage('An error occurred while processing your payment. Please try again.');
+      setErrorMessage(error.message || 'Payment processing failed. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const luhnCheck = (cardNumber) => {
+    let sum = 0;
+    let isEven = false;
+    
+    for (let i = cardNumber.length - 1; i >= 0; i--) {
+      let digit = parseInt(cardNumber.charAt(i));
+
+      if (isEven) {
+        digit *= 2;
+        if (digit > 9) {
+          digit -= 9;
+        }
+      }
+
+      sum += digit;
+      isEven = !isEven;
+    }
+
+    return sum % 10 === 0;
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#8B0000] to-[#000000] text-white flex flex-col items-center justify-center p-6">
-      <div className="w-full max-w-7xl bg-transparent border-4 border-yellow-500 rounded-xl shadow-lg p-8 mt-8">
-        <h2 className="text-3xl font-semibold mb-6 text-center text-yellow-500">Payment Details</h2>
-
+      <div className="w-full max-w-md mx-auto bg-black bg-opacity-80 backdrop-blur-md border-4 border-yellow-500 rounded-xl shadow-lg p-8 mt-8">
+        <h1 className="text-3xl font-bold text-center text-yellow-500 mb-8">Secure Payment</h1>
+        
         {errorMessage && (
-          <div className="bg-red-500 text-white text-center py-2 rounded-md mb-4">
+          <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-300 px-4 py-2 rounded mb-4">
             {errorMessage}
           </div>
         )}
 
-        <form onSubmit={handlePaymentSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="cardNumber"
-            value={paymentInfo.cardNumber}
-            onChange={handleInputChange}
-            placeholder="Card Number (16 digits)"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-            maxLength={16}
-          />
-          <input
-            type="text"
-            name="expirationDate"
-            value={paymentInfo.expirationDate}
-            onChange={handleInputChange}
-            placeholder="Expiration Date (MM/YY)"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-            maxLength={5}
-          />
-          <input
-            type="text"
-            name="cvv"
-            value={paymentInfo.cvv}
-            onChange={handleInputChange}
-            placeholder="CVV (3 or 4 digits)"
-            className="w-full px-4 py-2 border-2 border-yellow-500 rounded-md bg-transparent text-white focus:outline-none"
-            maxLength={4}
-          />
+        <form onSubmit={handlePaymentSubmit} className="space-y-6">
+          <div className="mb-6 text-center">
+            <h2 className="text-xl font-semibold text-yellow-500">Order Total</h2>
+            <p className="text-2xl font-bold text-white">${orderTotal.toFixed(2)}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="cardholderName" className="block text-sm font-medium text-gray-300">
+              Cardholder Name
+            </label>
+            <input
+              id="cardholderName"
+              type="text"
+              name="cardholderName"
+              value={paymentInfo.cardholderName}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="John Doe"
+              className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                formErrors.cardholderName ? 'border-red-500' : ''
+              }`}
+              autoComplete="cc-name"
+            />
+            {formErrors.cardholderName && (
+              <p className="text-red-500 text-sm mt-1">{formErrors.cardholderName}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-300">
+              Card Number
+            </label>
+            <input
+              id="cardNumber"
+              type="text"
+              name="cardNumber"
+              value={paymentInfo.cardNumber}
+              onChange={handleInputChange}
+              onBlur={handleBlur}
+              placeholder="1234 5678 9012 3456"
+              className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                formErrors.cardNumber ? 'border-red-500' : ''
+              }`}
+              autoComplete="cc-number"
+            />
+            {formErrors.cardNumber && (
+              <p className="text-red-500 text-sm mt-1">{formErrors.cardNumber}</p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-300">
+                Expiration Date
+              </label>
+              <input
+                id="expirationDate"
+                type="text"
+                name="expirationDate"
+                value={paymentInfo.expirationDate}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                placeholder="MM/YY"
+                className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                  formErrors.expirationDate ? 'border-red-500' : ''
+                }`}
+                autoComplete="cc-exp"
+              />
+              {formErrors.expirationDate && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.expirationDate}</p>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="cvv" className="block text-sm font-medium text-gray-300">
+                CVV
+              </label>
+              <input
+                id="cvv"
+                type="password"
+                name="cvv"
+                value={paymentInfo.cvv}
+                onChange={handleInputChange}
+                onBlur={handleBlur}
+                placeholder="123"
+                className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                  formErrors.cvv ? 'border-red-500' : ''
+                }`}
+                autoComplete="cc-csc"
+              />
+              {formErrors.cvv && (
+                <p className="text-red-500 text-sm mt-1">{formErrors.cvv}</p>
+              )}
+            </div>
+          </div>
+
           <button
             type="submit"
-            className="w-full py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition"
+            disabled={isSubmitting}
+            className={`w-full py-3 px-4 bg-yellow-500 text-black rounded-lg font-semibold transition-all
+              ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-400'}`}
           >
-            Complete Payment
+            {isSubmitting ? 'Processing...' : 'Pay Securely'}
           </button>
         </form>
+
+        <div className="mt-6 text-center text-sm text-gray-400">
+          <p>Your payment information is encrypted and secure</p>
+        </div>
       </div>
     </div>
   );

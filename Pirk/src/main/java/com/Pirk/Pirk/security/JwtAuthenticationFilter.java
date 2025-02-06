@@ -57,24 +57,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
       } else {
-        if (logger.isWarnEnabled()) {
-          logger.warn("Invalid token: {}", token);
-        }
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-        response.setContentType("application/json");
-        response.getWriter().write("{\"error\": \"Invalid or expired token\"}");
+        handleInvalidToken(response, token, "Invalid or expired token");
         return;
       }
     } catch (Exception e) {
       if (logger.isErrorEnabled()) {
         logger.error("Error processing token: {}", e.getMessage(), e);
       }
-      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-      response.setContentType("application/json");
-      response.getWriter().write("{\"error\": \"Invalid or expired token\"}");
+      handleInvalidToken(response, token, "Error processing token");
       return;
     }
 
     filterChain.doFilter(request, response);
+  }
+
+  // Refactor error response handling into a method for reuse
+  private void handleInvalidToken(HttpServletResponse response, String token, String errorMessage) throws IOException {
+    if (token != null && logger.isWarnEnabled()) {
+      logger.warn("Invalid token: {}", token);
+    }
+    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    response.setContentType("application/json");
+    response.getWriter().write("{\"error\": \"" + errorMessage + "\"}");
   }
 }

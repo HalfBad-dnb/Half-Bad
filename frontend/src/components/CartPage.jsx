@@ -16,7 +16,7 @@ const CartPage = () => {
   const handleCheckout = () => {
     if (cart.length > 0) {
       sessionStorage.setItem("orderTotal", calculateOverallTotal());
-      clearCart();
+      sessionStorage.setItem("cartItems", JSON.stringify(cart)); // Save cart items
       navigate('/checkout');
     } else {
       alert("Your cart is empty!");

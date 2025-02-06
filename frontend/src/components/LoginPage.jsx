@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faLock } from '@fortawesome/free-solid-svg-icons';
 
@@ -9,6 +9,7 @@ function LoginPage({ setIsAuthenticated }) {
   const [error, setError] = useState("");
   const [visible, setVisible] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     setTimeout(() => {
@@ -36,9 +37,11 @@ function LoginPage({ setIsAuthenticated }) {
       }
 
       const data = await response.json();
-      localStorage.setItem("token", data.token);
+      sessionStorage.setItem("token", data.token);
       setIsAuthenticated(true);
-      navigate("/profile");
+      // Check if there's a return URL in the state
+      const returnUrl = location.state?.returnUrl || "/profile";
+      navigate(returnUrl);
     } catch (err) {
       setError("An error occurred. Please try again.");
     }
@@ -124,7 +127,7 @@ function LoginPage({ setIsAuthenticated }) {
 
       {/* Footer */}
       <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p>© 2025 All Rights Reserved. HALF BAD™</p>
+        <p> 2025 All Rights Reserved. HALF BAD</p>
         <div className="mt-2">
           <ul className="flex justify-center space-x-6">
             <li>

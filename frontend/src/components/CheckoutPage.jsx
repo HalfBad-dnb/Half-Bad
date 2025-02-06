@@ -1,11 +1,12 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUser, faHome, faCity, faEnvelope, faGlobe } from "@fortawesome/free-solid-svg-icons";
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUser, faHome, faCity, faEnvelope, faGlobe } from '@fortawesome/free-solid-svg-icons';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
-  const [orderTotal, setOrderTotal] = useState("0.00");
+  const [orderTotal, setOrderTotal] = useState(0);
+  const [validationErrors, setValidationErrors] = useState({});
   const [shippingInfo, setShippingInfo] = useState({
     name: "",
     address: "",
@@ -15,80 +16,101 @@ const CheckoutPage = () => {
   });
 
   useEffect(() => {
-    const total = sessionStorage.getItem("orderTotal") || "0.00";
-    setOrderTotal(total);
-  }, []);
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setShippingInfo((prevInfo) => ({
-      ...prevInfo,
-      [name]: value,
-    }));
-  };
-
-  const handleProceedToPayment = async (e) => {
-    e.preventDefault();
-
-    if (Object.values(shippingInfo).some((field) => field === "")) {
-      alert("Please fill in all shipping details.");
+    // Check if user is logged in first
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      navigate('/login', { state: { returnUrl: '/checkout' } });
       return;
     }
 
-    sessionStorage.setItem("shippingInfo", JSON.stringify(shippingInfo));
-    sessionStorage.setItem("orderTotal", orderTotal);
+    // Then check if cart is empty
+    const storedCart = sessionStorage.getItem('cart');
+    if (!storedCart) {
+      navigate('/cart');
+      return;
+    }
 
-    const cartItems = JSON.parse(sessionStorage.getItem("cartItems")) || [];
-
-    const orderData = {
-      shippingInfo: {
-        ...shippingInfo,
-        email: shippingInfo.email || '',
-        phone: shippingInfo.phone || ''
-      },
-      cartItems: cartItems.map(item => ({
-        productId: item.id,
-        quantity: item.quantity,
-        price: parseFloat(item.price)
-      })),
-      totalAmount: parseFloat(orderTotal),
-      status: 'PENDING'
-    };
-
-    console.log("Sending Order Data:", orderData);
-
+    // Calculate total
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('Please log in to proceed with checkout');
-        navigate('/login');
+      const cartItems = JSON.parse(storedCart);
+      if (!Array.isArray(cartItems) || cartItems.length === 0) {
+        console.error('Cart is empty or invalid');
+        navigate('/cart');
         return;
       }
 
-      const response = await fetch("http://localhost:8081/api/orders", {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(orderData)
-      });
+      const total = cartItems.reduce((sum, item) => {
+        const price = parseFloat(item.price || 0);
+        const quantity = parseInt(item.quantity || 0, 10);
+        if (isNaN(price) || isNaN(quantity)) {
+          console.warn('Invalid price or quantity for item:', item);
+          return sum;
+        }
+        return sum + (price * quantity);
+      }, 0);
 
-      if (response.ok) {
-        const order = await response.json();
-        console.log("Order confirmed:", order);
-        // Store the order ID for the payment process
-        sessionStorage.setItem('orderId', order.id);
-        navigate("/payment");
-      } else {
-        const errorText = await response.text();
-        console.error("Failed to confirm order:", response.status, errorText);
-        alert("Failed to process the order. Please try again.");
-      }
+      console.log('Cart items:', cartItems);
+      console.log('Calculated total:', total);
+      setOrderTotal(total.toFixed(2));
     } catch (error) {
-      console.error("Error creating order:", error);
-      alert("An error occurred. Please check your connection.");
+      console.error('Error processing cart:', error);
+      navigate('/cart');
     }
+  }, [navigate]);
+
+  // Handle input changes for shipping info
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setShippingInfo(prev => ({ ...prev, [name]: value }));
+
+    // Clear error for this field
+    setValidationErrors(prev => ({ ...prev, [name]: '' }));
+
+    // Validate postal code immediately
+    if (name === 'postalCode') {
+      const postalCodeRegex = /^[0-9]{5}$/;
+      if (!postalCodeRegex.test(value)) {
+        setValidationErrors(prev => ({ ...prev, postalCode: 'Invalid postal code format' }));
+      } else {
+        setValidationErrors(prev => ({ ...prev, postalCode: '' }));
+      }
+    }
+  };
+
+  // Submit the order and navigate to payment
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const errors = {};
+
+    // Validate required fields
+    const fields = {
+      name: 'Name',
+      address: 'Address',
+      city: 'City',
+      postalCode: 'Postal code',
+      country: 'Country'
+    };
+
+    Object.entries(fields).forEach(([field, label]) => {
+      if (!shippingInfo[field].trim()) {
+        errors[field] = `${label} is required`;
+      }
+    });
+
+    // Validate postal code format
+    const postalCodeRegex = /^[0-9]{5}$/;
+    if (shippingInfo.postalCode && !postalCodeRegex.test(shippingInfo.postalCode)) {
+      errors.postalCode = 'Invalid postal code format';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setValidationErrors(errors);
+      return;
+    }
+
+    // Save shipping info and navigate to payment
+    sessionStorage.setItem('shippingInfo', JSON.stringify(shippingInfo));
+    navigate('/payment');
   };
 
   return (
@@ -107,15 +129,13 @@ const CheckoutPage = () => {
         <div className="relative z-10 max-w-md mx-auto">
           <div className="bg-black bg-opacity-80 backdrop-blur-md p-8 rounded-2xl shadow-2xl border-2 border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-500">
             <h2 className="text-2xl font-semibold text-center text-[#FFD700] mb-6">Order Summary</h2>
-            <div className="text-xl text-yellow-500 font-bold text-center mb-6">Total: ${orderTotal}</div>
+            <div className="text-xl text-yellow-500 font-bold text-center mb-6">Total: ${typeof orderTotal === 'number' ? orderTotal.toFixed(2) : orderTotal}</div>
 
-            <form onSubmit={handleProceedToPayment} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               {[
                 { name: "name", icon: faUser, placeholder: "Full Name" },
                 { name: "address", icon: faHome, placeholder: "Address" },
                 { name: "city", icon: faCity, placeholder: "City" },
-                { name: "postalCode", icon: faEnvelope, placeholder: "Postal Code" },
-                { name: "country", icon: faGlobe, placeholder: "Country" },
               ].map((field) => (
                 <div key={field.name}>
                   <label className="block text-[#FFD700] text-sm font-medium mb-2">
@@ -127,11 +147,45 @@ const CheckoutPage = () => {
                     value={shippingInfo[field.name]}
                     onChange={handleInputChange}
                     placeholder={field.placeholder}
-                    className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
-                    required
+                    className={`w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400 ${validationErrors[field.name] ? 'border-red-500' : ''}`}
                   />
+                  {validationErrors[field.name] && (
+                    <p className="text-red-500 text-sm mt-2">{validationErrors[field.name]}</p>
+                  )}
                 </div>
               ))}
+              <div>
+                <label className="block text-[#FFD700] text-sm font-medium mb-2">
+                  <FontAwesomeIcon icon={faEnvelope} className="mr-2" /> Postal Code
+                </label>
+                <input
+                  type="text"
+                  name="postalCode"
+                  value={shippingInfo.postalCode}
+                  onChange={handleInputChange}
+                  placeholder="Postal Code"
+                  className={`w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400 ${validationErrors.postalCode ? 'border-red-500' : ''}`}
+                />
+                {validationErrors.postalCode && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.postalCode}</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-[#FFD700] text-sm font-medium mb-2">
+                  <FontAwesomeIcon icon={faGlobe} className="mr-2" /> Country
+                </label>
+                <input
+                  type="text"
+                  name="country"
+                  value={shippingInfo.country}
+                  onChange={handleInputChange}
+                  placeholder="Country"
+                  className={`w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400 ${validationErrors.country ? 'border-red-500' : ''}`}
+                />
+                {validationErrors.country && (
+                  <p className="text-red-500 text-sm mt-2">{validationErrors.country}</p>
+                )}
+              </div>
 
               <button
                 type="submit"

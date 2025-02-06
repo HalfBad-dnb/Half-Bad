@@ -34,7 +34,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
+            .csrf(AbstractHttpConfigurer::disable) // Disabling CSRF (you can adjust this depending on your needs)
             .cors(cors -> cors.configurationSource(request -> {
                 var corsConfig = new org.springframework.web.cors.CorsConfiguration();
                 corsConfig.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
@@ -46,40 +46,38 @@ public class SecurityConfig {
                 return corsConfig;
             }))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/products/**", "/api/products/**", "/error").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
+                .requestMatchers("/auth/**", "/products/**", "/api/products/**", "/error").permitAll() // Open for all
+                .requestMatchers("/api/admin/**").hasRole("ADMIN") // Only admin can access
+                .anyRequest().authenticated() // Authenticate all other requests
             )
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)) // Handle unauthorized requests
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    response.setStatus(HttpStatus.OK.value());
-                })
+                .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpStatus.OK.value()))
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
+                .deleteCookies("JSESSIONID") // Ensure logout clears session
                 .permitAll()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter
 
         return http.build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA512");
-        return NimbusJwtDecoder.withSecretKey(secretKey).build();
+        SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA512"); // Secret key used to decode JWT
+        return NimbusJwtDecoder.withSecretKey(secretKey).build(); // Decoding JWT
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        return new BCryptPasswordEncoder(); // Using BCrypt to encode passwords
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager();
+        return authConfig.getAuthenticationManager(); // Authentication manager for handling login
     }
 }

@@ -9,15 +9,25 @@ export const useCart = () => useContext(CartContext);
 export const CartProvider = ({ children }) => {
   // Initialize cart state with sessionStorage or default to an empty array
   const [cart, setCart] = useState(() => {
-    const storedCart = sessionStorage.getItem("cart");
-    return storedCart ? JSON.parse(storedCart) : [];
+    try {
+      const storedCart = sessionStorage.getItem("cart");
+      return storedCart ? JSON.parse(storedCart) : [];
+    } catch (error) {
+      console.error('Error parsing cart from sessionStorage:', error);
+      return [];
+    }
   });
 
   // Load cart from sessionStorage when the component mounts
   useEffect(() => {
-    const storedCart = sessionStorage.getItem("cart");
-    if (storedCart) {
-      setCart(JSON.parse(storedCart));
+    try {
+      const storedCart = sessionStorage.getItem("cart");
+      if (storedCart) {
+        setCart(JSON.parse(storedCart));
+      }
+    } catch (error) {
+      console.error('Error parsing cart from sessionStorage:', error);
+      setCart([]);
     }
   }, []);
 

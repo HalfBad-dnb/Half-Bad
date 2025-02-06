@@ -9,9 +9,18 @@ public class PaymentInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(nullable = false)
+    private String cardholderName;
+
     private String cardNumber;
     private String expirationDate;
     private String cvv;
+    private Long orderId;
+    private String paymentStatus;
+
+    public PaymentInfo() {
+        this.paymentStatus = "PENDING";
+    }
 
     // Getters and setters
     public Long getId() {
@@ -20,6 +29,14 @@ public class PaymentInfo {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public String getCardholderName() {
+        return cardholderName;
+    }
+
+    public void setCardholderName(String cardholderName) {
+        this.cardholderName = cardholderName;
     }
 
     public String getCardNumber() {
@@ -44,6 +61,22 @@ public class PaymentInfo {
 
     public void setCvv(String cvv) {
         this.cvv = cvv;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
     }
 
     @Override
