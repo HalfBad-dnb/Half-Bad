@@ -35,23 +35,46 @@ public class OrderController {
     @PostMapping
     public ResponseEntity<?> createOrder(@RequestBody Order order) {
         try {
+            // Get current user ID
             Long userId = getCurrentUserId();
+            logger.info("Creating order for user ID: {}", userId);
+
+            // Validate order data
+            if (order == null) {
+                logger.error("Order data is null");
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Order data is required"));
+            }
+
+            if (order.getCartItems() == null || order.getCartItems().isEmpty()) {
+                logger.error("Order has no items");
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Order must contain at least one item"));
+            }
+
+            if (order.getShippingInfo() == null) {
+                logger.error("Order has no shipping information");
+                return ResponseEntity.badRequest()
+                    .body(Map.of("message", "Shipping information is required"));
+            }
+
+            // Set user ID and initial status
             order.setUserId(userId);
-            
-            // Set initial order status
             order.setStatus("PENDING");
             
             // Log the incoming order
-            logger.info("Creating order for user {}: {}", userId, order);
+            logger.info("Creating order with {} items, total amount: {}", 
+                order.getCartItems().size(), order.getTotalAmount());
             
+            // Create the order
             Order savedOrder = orderService.createOrder(order);
-            logger.info("Order created successfully: {}", savedOrder.getId());
+            logger.info("Order created successfully with ID: {}", savedOrder.getId());
             
             return ResponseEntity.ok(savedOrder);
         } catch (Exception e) {
-            logger.error("Failed to create order: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", "Failed to create order: " + e.getMessage()));
+            logger.error("Error creating order: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("message", "Failed to create order: " + e.getMessage()));
         }
     }
 

@@ -1,6 +1,7 @@
 package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.util.Date;
 import java.util.List;
 
@@ -24,8 +25,8 @@ public class Order {
     @JoinColumn(name = "shipping_info_id")
     private ShippingInfo shippingInfo;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-    @JoinColumn(name = "payment_info_id")
+    @JsonManagedReference
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private PaymentInfo paymentInfo;
 
     @Column(nullable = false)

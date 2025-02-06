@@ -17,73 +17,22 @@ const PaymentPage = () => {
   const [formErrors, setFormErrors] = useState({});
 
   useEffect(() => {
-    const shippingInfo = sessionStorage.getItem('shippingInfo');
-    const cart = sessionStorage.getItem('cart');
     const token = sessionStorage.getItem('token');
+    const orderId = sessionStorage.getItem('orderId');
+    const orderTotal = sessionStorage.getItem('orderTotal');
 
     if (!token) {
       navigate('/login', { state: { returnUrl: '/payment' } });
       return;
     }
 
-    if (!shippingInfo || !cart) {
+    if (!orderId || !orderTotal) {
+      console.error('Missing order data:', { orderId, orderTotal });
       navigate('/checkout');
       return;
     }
 
-    try {
-      const cartData = JSON.parse(cart);
-      const shippingData = JSON.parse(shippingInfo);
-      
-      // Validate cart data
-      if (!Array.isArray(cartData) || cartData.length === 0) {
-        console.error('Invalid cart data');
-        navigate('/cart');
-        return;
-      }
-
-      // Calculate total
-      const total = cartData.reduce((sum, item) => {
-        const price = parseFloat(item.price || 0);
-        const quantity = parseInt(item.quantity || 0, 10);
-        if (isNaN(price) || isNaN(quantity)) {
-          console.warn('Invalid price or quantity for item:', item);
-          return sum;
-        }
-        return sum + (price * quantity);
-      }, 0);
-
-      setOrderTotal(total);
-      console.log('Order total:', total);
-
-      // Validate shipping data
-      if (!shippingData || !shippingData.name || !shippingData.address) {
-        console.error('Invalid shipping data');
-        navigate('/checkout');
-        return;
-      }
-
-      // Generate order ID if not exists
-      let orderId = sessionStorage.getItem('orderId');
-      if (!orderId) {
-        orderId = Date.now(); // Just use timestamp as orderId
-        sessionStorage.setItem('orderId', orderId);
-      }
-    } catch (error) {
-      console.error('Error processing data:', error);
-      navigate('/cart');
-      return;
-    }
-
-    // Set up protection against browser back/forward
-    window.history.pushState(null, '', window.location.href);
-    window.onpopstate = function() {
-      window.history.pushState(null, '', window.location.href);
-    };
-
-    return () => {
-      window.onpopstate = null;
-    };
+    setOrderTotal(parseFloat(orderTotal));
   }, [navigate]);
 
   const validateCardNumber = (number) => {
@@ -239,21 +188,19 @@ const PaymentPage = () => {
 
     try {
       const token = sessionStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication required');
-      }
-
       const orderId = sessionStorage.getItem('orderId');
-      if (!orderId) {
-        throw new Error('No order found');
+      const userId = sessionStorage.getItem('userId');
+
+      if (!token || !orderId || !userId) {
+        throw new Error('Missing required data for payment');
       }
 
       const cleanCardNumber = cardNumber.replace(/\s/g, '');
       const last4 = cleanCardNumber.slice(-4);
       
-      // Use hardcoded API URL for now - in production this should be in .env
-      const API_URL = 'http://localhost:8081';
-      const response = await fetch(`${API_URL}/api/payments`, {
+      console.log('Processing payment for order:', orderId);
+      
+      const response = await fetch('http://localhost:8081/api/payments', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -263,8 +210,10 @@ const PaymentPage = () => {
           cardNumber: cleanCardNumber,
           expirationDate,
           cvv,
-          orderId: parseInt(sessionStorage.getItem('orderId') || '0', 10),
-          cardholderName: cardholderName.trim()
+          orderId: parseInt(orderId, 10),
+          buyerId: parseInt(userId, 10),
+          cardholderName: cardholderName.trim(),
+          amount: orderTotal
         })
       });
 
@@ -273,6 +222,7 @@ const PaymentPage = () => {
         try {
           const errorData = await response.json();
           errorMessage = errorData.message || errorMessage;
+          console.error('Payment error response:', errorData);
         } catch (e) {
           console.error('Error parsing error response:', e);
         }
@@ -280,30 +230,36 @@ const PaymentPage = () => {
       }
 
       const data = await response.json();
+      console.log('Payment response:', data);
       
-      // Clear sensitive data
-      setPaymentInfo({
-        cardNumber: '',
-        expirationDate: '',
-        cvv: '',
-        cardholderName: ''
-      });
-      
-      // Clear cart and session data
-      clearCart();
-      sessionStorage.removeItem('cart');
-      sessionStorage.removeItem('orderId');
-      sessionStorage.removeItem('shippingInfo');
-      
-      navigate('/order-confirmation', { 
-        state: { 
-          orderId: data.orderId,
-          last4,
-          cardholderName
-        }
-      });
+      if (data.status === 'success' && data.paymentInfo.paymentStatus === 'COMPLETED') {
+        // Clear sensitive data
+        setPaymentInfo({
+          cardNumber: '',
+          expirationDate: '',
+          cvv: '',
+          cardholderName: ''
+        });
+        
+        // Clear cart and session data
+        clearCart();
+        sessionStorage.removeItem('cart');
+        sessionStorage.removeItem('orderId');
+        sessionStorage.removeItem('orderTotal');
+        
+        // Navigate to confirmation page
+        navigate('/order-confirmation', { 
+          state: { 
+            orderId: orderId,
+            status: 'success' 
+          }
+        });
+      } else {
+        throw new Error(data.message || 'Payment was not completed successfully');
+      }
     } catch (error) {
-      setErrorMessage(error.message || 'Payment processing failed. Please try again.');
+      console.error('Payment error:', error);
+      setErrorMessage(error.message || 'Failed to process payment');
     } finally {
       setIsSubmitting(false);
     }

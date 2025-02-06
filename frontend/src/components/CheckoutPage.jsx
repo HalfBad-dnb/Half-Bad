@@ -91,13 +91,8 @@ const CheckoutPage = () => {
     e.preventDefault();
     setIsProcessing(true);
     setError(null);
-    
-    try {
-      // Validate shipping info
-      if (!shippingInfo.fullName || !shippingInfo.email || !shippingInfo.address || !shippingInfo.city || !shippingInfo.postalCode || !shippingInfo.country) {
-        throw new Error('Please fill in all shipping details');
-      }
 
+    try {
       console.log('Starting checkout process...');
 
       // Get current user info
@@ -121,6 +116,15 @@ const CheckoutPage = () => {
       const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
       console.log('Cart from session:', cart);
       
+      if (!cart || cart.length === 0) {
+        throw new Error('Your cart is empty');
+      }
+
+      const totalAmount = cart.reduce((total, item) => total + (item.price * item.quantity), 0);
+      if (totalAmount <= 0) {
+        throw new Error('Invalid order total');
+      }
+      
       const orderData = {
         shippingInfo: {
           fullName: shippingInfo.fullName,
@@ -137,7 +141,7 @@ const CheckoutPage = () => {
           quantity: item.quantity,
           price: item.price
         })),
-        totalAmount: cart.reduce((total, item) => total + (item.price * item.quantity), 0),
+        totalAmount: totalAmount,
         status: 'PENDING',
         userId: userResponse.data.id
       };
@@ -149,20 +153,38 @@ const CheckoutPage = () => {
         orderData,
         {
           headers: {
-            Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
         }
       );
-      console.log('Order created:', orderResponse.data);
+      
+      console.log('Order creation response:', orderResponse);
+      
+      if (!orderResponse.data || !orderResponse.data.id) {
+        throw new Error('Failed to create order: Invalid response from server');
+      }
 
-      // Store shipping info and order ID in session storage
+      // Store necessary data in session storage
       sessionStorage.setItem('shippingInfo', JSON.stringify(shippingInfo));
       sessionStorage.setItem('orderId', orderResponse.data.id);
+      sessionStorage.setItem('orderTotal', totalAmount);
+      sessionStorage.setItem('userId', userResponse.data.id);
+      console.log('Stored order data in session:', {
+        orderId: orderResponse.data.id,
+        total: totalAmount,
+        userId: userResponse.data.id
+      });
 
       // Redirect to payment page
-      navigate('/payment');
+      navigate('/payment', { 
+        state: { 
+          orderId: orderResponse.data.id,
+          total: totalAmount 
+        }
+      });
     } catch (error) {
+      console.error('Checkout error:', error);
       setError(error.response?.data?.message || error.message || 'An error occurred during checkout');
     } finally {
       setIsProcessing(false);

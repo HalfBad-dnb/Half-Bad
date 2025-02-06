@@ -11,7 +11,7 @@ import java.util.List;
 import com.Pirk.Pirk.repositories.OrderRepository;
 
 @Service
-public class OrderService {
+public class OrderService implements OrderServiceInterface {
 
     private static final Logger logger = LoggerFactory.getLogger(OrderService.class);
 

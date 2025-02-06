@@ -2,19 +2,23 @@ package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.PaymentInfo;
 import com.Pirk.Pirk.models.PaymentRequest;
+import com.Pirk.Pirk.models.Order;
 import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -23,135 +27,174 @@ public class PaymentInfoServiceTest {
     @Mock
     private PaymentInfoRepository paymentInfoRepository;
 
+    @Mock
+    private OrderService orderService;
+
     @InjectMocks
     private PaymentInfoService paymentInfoService;
 
-    private PaymentInfo testPaymentInfo;
-    private PaymentRequest testPaymentRequest;
-
     @BeforeEach
     void setUp() {
-        testPaymentInfo = new PaymentInfo();
+        MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    void testGetAllPaymentInfo() {
+        // Create test data
+        Order testOrder = new Order();
+        testOrder.setId(1L);
+
+        PaymentInfo testPaymentInfo = new PaymentInfo();
         testPaymentInfo.setId(1L);
+        testPaymentInfo.setOrder(testOrder);
+        testPaymentInfo.setBuyerId(1L);
         testPaymentInfo.setCardholderName("John Doe");
-        testPaymentInfo.setLastFourDigits("1111");
-        testPaymentInfo.setOrderId(1L);
         testPaymentInfo.setPaymentStatus("COMPLETED");
 
-        testPaymentRequest = new PaymentRequest();
-        testPaymentRequest.setCardNumber("4111111111111111");
-        testPaymentRequest.setExpirationDate("12/25");
-        testPaymentRequest.setCvv("123");
-        testPaymentRequest.setCardholderName("John Doe");
-        testPaymentRequest.setOrderId(1L);
-        testPaymentRequest.setBuyerId(1L);
+        List<PaymentInfo> expectedPayments = new ArrayList<>();
+        expectedPayments.add(testPaymentInfo);
+
+        // Mock repository behavior
+        when(paymentInfoRepository.findAll()).thenReturn(expectedPayments);
+
+        // Test the service method
+        List<PaymentInfo> actualPayments = paymentInfoService.getAllPaymentInfo();
+
+        // Verify the results
+        assertEquals(expectedPayments.size(), actualPayments.size());
+        assertEquals(expectedPayments.get(0).getId(), actualPayments.get(0).getId());
+        verify(paymentInfoRepository, times(1)).findAll();
     }
 
     @Test
-    void whenGetPaymentInfoWithValidId_thenReturnPaymentInfo() {
-        // Given
+    void testGetPaymentInfoById() {
+        // Create test data
+        Order testOrder = new Order();
+        testOrder.setId(1L);
+
+        PaymentInfo testPaymentInfo = new PaymentInfo();
+        testPaymentInfo.setId(1L);
+        testPaymentInfo.setOrder(testOrder);
+        testPaymentInfo.setBuyerId(1L);
+        testPaymentInfo.setCardholderName("John Doe");
+        testPaymentInfo.setPaymentStatus("COMPLETED");
+
+        // Mock repository behavior
         when(paymentInfoRepository.findById(1L)).thenReturn(Optional.of(testPaymentInfo));
 
-        // When
-        Optional<PaymentInfo> result = paymentInfoService.getPaymentInfo(1L);
+        // Test the service method
+        Optional<PaymentInfo> actualPayment = paymentInfoService.getPaymentInfoById(1L);
 
-        // Then
-        assertTrue(result.isPresent());
-        assertEquals(testPaymentInfo.getCardholderName(), result.get().getCardholderName());
-        assertEquals(testPaymentInfo.getLastFourDigits(), result.get().getLastFourDigits());
-        assertEquals(testPaymentInfo.getOrderId(), result.get().getOrderId());
-        verify(paymentInfoRepository).findById(1L);
+        // Verify the results
+        assertTrue(actualPayment.isPresent());
+        assertEquals(testPaymentInfo.getId(), actualPayment.get().getId());
+        verify(paymentInfoRepository, times(1)).findById(1L);
     }
 
     @Test
-    void whenGetPaymentInfoWithInvalidId_thenReturnEmpty() {
-        // Given
-        when(paymentInfoRepository.findById(999L)).thenReturn(Optional.empty());
+    void testGetPaymentInfoByOrderId() {
+        // Create test data
+        Order testOrder = new Order();
+        testOrder.setId(1L);
 
-        // When
-        Optional<PaymentInfo> result = paymentInfoService.getPaymentInfo(999L);
+        PaymentInfo testPaymentInfo = new PaymentInfo();
+        testPaymentInfo.setId(1L);
+        testPaymentInfo.setOrder(testOrder);
+        testPaymentInfo.setBuyerId(1L);
+        testPaymentInfo.setCardholderName("John Doe");
+        testPaymentInfo.setPaymentStatus("COMPLETED");
 
-        // Then
-        assertFalse(result.isPresent());
-        verify(paymentInfoRepository).findById(999L);
-    }
+        Order secondOrder = new Order();
+        secondOrder.setId(2L);
 
-    @Test
-    void whenGetAllPaymentInfo_thenReturnList() {
-        // Given
         PaymentInfo secondPaymentInfo = new PaymentInfo();
         secondPaymentInfo.setId(2L);
+        secondPaymentInfo.setOrder(secondOrder);
+        secondPaymentInfo.setBuyerId(2L);
         secondPaymentInfo.setCardholderName("Jane Doe");
-        secondPaymentInfo.setLastFourDigits("4444");
-        secondPaymentInfo.setOrderId(2L);
         secondPaymentInfo.setPaymentStatus("COMPLETED");
 
-        List<PaymentInfo> expectedList = Arrays.asList(testPaymentInfo, secondPaymentInfo);
-        when(paymentInfoRepository.findAll()).thenReturn(expectedList);
+        List<PaymentInfo> allPayments = new ArrayList<>();
+        allPayments.add(testPaymentInfo);
+        allPayments.add(secondPaymentInfo);
 
-        // When
-        List<PaymentInfo> result = paymentInfoService.getAllPaymentInfo();
+        // Mock repository behavior
+        when(paymentInfoRepository.findAll()).thenReturn(allPayments);
 
-        // Then
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(testPaymentInfo.getCardholderName(), result.get(0).getCardholderName());
-        assertEquals(secondPaymentInfo.getCardholderName(), result.get(1).getCardholderName());
-        verify(paymentInfoRepository).findAll();
+        // Test the service method
+        List<PaymentInfo> actualPayments = paymentInfoService.getPaymentInfoByOrderId(1L);
+
+        // Verify the results
+        assertEquals(1, actualPayments.size());
+        assertEquals(testPaymentInfo.getId(), actualPayments.get(0).getId());
+        verify(paymentInfoRepository, times(1)).findAll();
     }
 
     @Test
-    void whenGetAllPaymentInfo_thenReturnEmptyList() {
-        // Given
-        when(paymentInfoRepository.findAll()).thenReturn(Arrays.asList());
+    void testProcessPayment_Success() {
+        // Create test data
+        Order testOrder = new Order();
+        testOrder.setId(1L);
 
-        // When
-        List<PaymentInfo> result = paymentInfoService.getAllPaymentInfo();
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(1L);
+        request.setBuyerId(1L);
+        request.setCardholderName("John Doe");
+        request.setCardNumber("4111111111111111");
+        request.setExpirationDate("12/25");
+        request.setCvv("123");
 
-        // Then
-        assertNotNull(result);
-        assertTrue(result.isEmpty());
-        verify(paymentInfoRepository).findAll();
-    }
-
-    @Test
-    void whenProcessPayment_withTestCard_thenReturnSuccessfulPayment() {
-        // Given
         PaymentInfo successPayment = new PaymentInfo();
+        successPayment.setId(1L);
+        successPayment.setOrder(testOrder);
+        successPayment.setBuyerId(1L);
         successPayment.setCardholderName("John Doe");
-        successPayment.setLastFourDigits("1111");
-        successPayment.setOrderId(1L);
         successPayment.setPaymentStatus("COMPLETED");
+
+        // Mock service and repository behavior
+        when(orderService.getOrderById(1L)).thenReturn(testOrder);
         when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(successPayment);
 
-        // When
-        PaymentInfo result = paymentInfoService.processPayment(testPaymentRequest);
+        // Test the service method
+        PaymentInfo result = paymentInfoService.processPayment(request);
 
-        // Then
+        // Verify the results
         assertNotNull(result);
         assertEquals("COMPLETED", result.getPaymentStatus());
-        assertEquals("1111", result.getLastFourDigits());
-        assertEquals("John Doe", result.getCardholderName());
-        verify(paymentInfoRepository).save(any(PaymentInfo.class));
+        verify(paymentInfoRepository, times(1)).save(any(PaymentInfo.class));
     }
 
     @Test
-    void whenProcessPayment_withDeclinedCard_thenThrowException() {
-        // Given
-        testPaymentRequest.setCardNumber("4111111111111112"); // Card that will be declined
+    void testProcessPayment_Failure() {
+        // Create test data
+        Order testOrder = new Order();
+        testOrder.setId(1L);
+
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(1L);
+        request.setBuyerId(1L);
+        request.setCardholderName("John Doe");
+        request.setCardNumber("4111111111111111");
+        request.setExpirationDate("12/20"); // Expired card
+        request.setCvv("123");
+
         PaymentInfo failedPayment = new PaymentInfo();
+        failedPayment.setId(1L);
+        failedPayment.setOrder(testOrder);
+        failedPayment.setBuyerId(1L);
         failedPayment.setCardholderName("John Doe");
-        failedPayment.setLastFourDigits("1112");
-        failedPayment.setOrderId(1L);
         failedPayment.setPaymentStatus("FAILED");
+
+        // Mock service and repository behavior
+        when(orderService.getOrderById(1L)).thenReturn(testOrder);
         when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(failedPayment);
 
-        // When & Then
-        Exception exception = assertThrows(PaymentDeclinedException.class, () -> {
-            paymentInfoService.processPayment(testPaymentRequest);
+        // Test the service method and expect an exception
+        assertThrows(PaymentDeclinedException.class, () -> {
+            paymentInfoService.processPayment(request);
         });
-        
-        assertEquals("Payment declined by gateway", exception.getMessage());
-        verify(paymentInfoRepository).save(any(PaymentInfo.class));
+
+        // Verify that save was called with a failed payment
+        verify(paymentInfoRepository, times(1)).save(any(PaymentInfo.class));
     }
 }

@@ -1,6 +1,7 @@
 package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import java.util.Date;
 
 @Entity
@@ -10,24 +11,36 @@ public class PaymentInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "cardholder_name", nullable = false)
     private String cardholderName;
 
-    @Column(length = 4)
-    private String lastFourDigits;  // Only store last 4 digits
+    @Column(name = "last_four_digits", length = 4)
+    private String lastFourDigits;
 
+    @Column(name = "order_id", nullable = false, insertable = false, updatable = false)
     private Long orderId;
-    @Column(nullable = false)
+
+    @JsonBackReference
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "order_id", nullable = false)
+    private Order order;
+
+    @Column(name = "payment_status", nullable = false)
     private String paymentStatus;
-    @Column(nullable = false)
+
+    @Column(name = "payment_date", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date paymentDate;
-    @Column(nullable = false)
+
+    @Column(name = "buyer_id", nullable = false)
     private Long buyerId;
 
     @PrePersist
     protected void onCreate() {
         paymentDate = new Date();
+        if (paymentStatus == null) {
+            paymentStatus = "PENDING";
+        }
     }
 
     public PaymentInfo() {
@@ -63,8 +76,12 @@ public class PaymentInfo {
         return orderId;
     }
 
-    public void setOrderId(Long orderId) {
-        this.orderId = orderId;
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
     }
 
     public String getPaymentStatus() {

@@ -2,22 +2,29 @@ package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.PaymentInfo;
 import com.Pirk.Pirk.models.PaymentRequest;
+import com.Pirk.Pirk.models.Order;
 import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PaymentInfoService {
 
     private final PaymentInfoRepository paymentInfoRepository;
+    private final OrderService orderService;
+    private static final Logger logger = LoggerFactory.getLogger(PaymentInfoService.class);
 
     @Autowired
-    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository) {
+    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository, OrderService orderService) {
         this.paymentInfoRepository = paymentInfoRepository;
+        this.orderService = orderService;
     }
 
     public Optional<PaymentInfo> getPaymentInfo(Long id) {
@@ -28,15 +35,31 @@ public class PaymentInfoService {
         return paymentInfoRepository.findAll();
     }
 
+    public Optional<PaymentInfo> getPaymentInfoById(Long id) {
+        return paymentInfoRepository.findById(id);
+    }
+
+    public List<PaymentInfo> getPaymentInfoByOrderId(Long orderId) {
+        return paymentInfoRepository.findAll().stream()
+                .filter(payment -> payment.getOrder().getId().equals(orderId))
+                .collect(Collectors.toList());
+    }
+
     public PaymentInfo processPayment(PaymentRequest request) {
         // Validate payment information
         validatePaymentRequest(request);
+
+        // Get the order
+        Order order = orderService.getOrderById(request.getOrderId());
+        if (order == null) {
+            throw new RuntimeException("Order not found: " + request.getOrderId());
+        }
 
         // Create PaymentInfo with only non-sensitive data
         PaymentInfo paymentInfo = new PaymentInfo();
         paymentInfo.setCardholderName(request.getCardholderName());
         paymentInfo.setLastFourDigits(getLastFourDigits(request.getCardNumber()));
-        paymentInfo.setOrderId(request.getOrderId());
+        paymentInfo.setOrder(order);
         paymentInfo.setBuyerId(request.getBuyerId());
 
         try {
@@ -45,24 +68,36 @@ public class PaymentInfoService {
             
             if (paymentSuccessful) {
                 paymentInfo.setPaymentStatus("COMPLETED");
-                return paymentInfoRepository.save(paymentInfo);
+                // Update order status to PAID after successful payment
+                orderService.updateOrderStatus(request.getOrderId(), "PAID");
             } else {
                 paymentInfo.setPaymentStatus("FAILED");
-                paymentInfoRepository.save(paymentInfo);
-                throw new PaymentDeclinedException("Payment declined by gateway");
+                throw new PaymentDeclinedException("Payment was declined");
             }
-        } catch (PaymentDeclinedException e) {
-            // Re-throw payment declined exceptions
-            throw e;
+
+            return paymentInfoRepository.save(paymentInfo);
         } catch (Exception e) {
-            // If we get here, it means there was an unexpected error, not a declined payment
-            throw new RuntimeException("Error processing payment: " + e.getMessage());
+            paymentInfo.setPaymentStatus("FAILED");
+            paymentInfoRepository.save(paymentInfo);
+            throw e;
         }
     }
 
     private void validatePaymentRequest(PaymentRequest request) {
         if (request.getOrderId() == null) {
             throw new IllegalArgumentException("Order ID is required");
+        }
+        if (request.getCardNumber() == null || request.getCardNumber().trim().isEmpty()) {
+            throw new IllegalArgumentException("Card number is required");
+        }
+        if (request.getExpirationDate() == null || request.getExpirationDate().trim().isEmpty()) {
+            throw new IllegalArgumentException("Expiration date is required");
+        }
+        if (request.getCvv() == null || request.getCvv().trim().isEmpty()) {
+            throw new IllegalArgumentException("CVV is required");
+        }
+        if (request.getCardholderName() == null || request.getCardholderName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Cardholder name is required");
         }
         if (request.getCardNumber() == null || !request.getCardNumber().matches("\\d{16}")) {
             throw new IllegalArgumentException("Invalid card number");
@@ -73,12 +108,12 @@ public class PaymentInfoService {
         if (request.getExpirationDate() == null || !isExpirationDateValid(request.getExpirationDate())) {
             throw new IllegalArgumentException("Invalid expiration date");
         }
-        if (request.getCardholderName() == null || request.getCardholderName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Cardholder name is required");
-        }
     }
 
     private String getLastFourDigits(String cardNumber) {
+        if (cardNumber == null || cardNumber.length() < 4) {
+            return null;
+        }
         return cardNumber.substring(cardNumber.length() - 4);
     }
 
@@ -98,17 +133,21 @@ public class PaymentInfoService {
     }
 
     private boolean processPaymentWithGateway(PaymentRequest request) {
-        // In a real application, this would integrate with a payment gateway
+        // Simulate payment processing with a payment gateway
+        // In a real application, this would integrate with a payment processor
+        
         // For testing purposes:
-        // - Approve payments with test card number 4111111111111111
-        // - Decline payments with test card number 4111111111111112
-        // - For all other cards, approve the payment
-        if (request.getCardNumber().equals("4111111111111111")) {
-            return true;
-        } else if (request.getCardNumber().equals("4111111111111112")) {
-            return false;
-        }
-        return true;
+        // - Cards ending in even numbers are approved
+        // - Cards ending in odd numbers are declined
+        String lastDigit = request.getCardNumber().substring(request.getCardNumber().length() - 1);
+        int digit = Integer.parseInt(lastDigit);
+        
+        // Log payment attempt
+        logger.info("Processing payment for card ending in {}", lastDigit);
+        boolean isApproved = digit % 2 == 0;
+        logger.info("Payment {} for card ending in {}", isApproved ? "approved" : "declined", lastDigit);
+        
+        return isApproved;
     }
 
     public void deletePaymentInfo(Long id) {
