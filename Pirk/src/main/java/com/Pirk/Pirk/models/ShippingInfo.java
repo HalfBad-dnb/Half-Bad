@@ -9,10 +9,16 @@ public class ShippingInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String name;
+    @Column(name = "full_name")
+    private String fullName;
+    
     private String address;
     private String city;
+    private String email;
+    
+    @Column(name = "postal_code")
     private String postalCode;
+    
     private String country;
 
     // Getters and setters
@@ -24,12 +30,12 @@ public class ShippingInfo {
         this.id = id;
     }
 
-    public String getName() {
-        return name;
+    public String getFullName() {
+        return fullName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setFullName(String fullName) {
+        this.fullName = fullName;
     }
 
     public String getAddress() {
@@ -46,6 +52,14 @@ public class ShippingInfo {
 
     public void setCity(String city) {
         this.city = city;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPostalCode() {
@@ -66,6 +80,6 @@ public class ShippingInfo {
 
     @Override
     public String toString() {
-        return String.format("%s, %s, %s %s, %s", name, address, city, postalCode, country);
+        return String.format("%s, %s, %s %s, %s", fullName, address, city, postalCode, country);
     }
 }

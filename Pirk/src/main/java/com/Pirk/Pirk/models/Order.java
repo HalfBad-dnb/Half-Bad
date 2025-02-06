@@ -20,11 +20,11 @@ public class Order {
 
     private double totalAmount;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "shipping_info_id")
     private ShippingInfo shippingInfo;
 
-    @OneToOne(cascade = CascadeType.ALL)
+    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "payment_info_id")
     private PaymentInfo paymentInfo;
 
@@ -37,7 +37,7 @@ public class Order {
     @Column(nullable = false)
     private String status = "PENDING";
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "order_id")
     private List<CartItem> cartItems;
 

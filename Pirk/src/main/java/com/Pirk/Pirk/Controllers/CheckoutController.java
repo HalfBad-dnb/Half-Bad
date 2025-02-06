@@ -1,12 +1,14 @@
 package com.Pirk.Pirk.controllers;
 
 import com.Pirk.Pirk.models.Checkout;
+import com.Pirk.Pirk.models.ErrorResponse;
 import com.Pirk.Pirk.models.Order;
 import com.Pirk.Pirk.models.PaymentInfo;
 import com.Pirk.Pirk.models.ShippingInfo;
 import com.Pirk.Pirk.services.CheckoutService;
 import com.Pirk.Pirk.services.OrderService;
 import com.Pirk.Pirk.services.PaymentInfoService;
+import com.Pirk.Pirk.models.PaymentRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
@@ -47,13 +49,16 @@ public class CheckoutController {
     @PostMapping("/{id}/payment")
     public ResponseEntity<?> processPayment(
             @PathVariable Long id,
-            @RequestBody PaymentInfo paymentInfo) {
+            @RequestBody PaymentRequest request) {
         try {
             // Get the checkout
             Checkout checkout = checkoutService.getCheckoutById(id);
             
+            // Set the order ID in the payment request
+            request.setOrderId(id);
+            
             // Process the payment
-            PaymentInfo processedPayment = paymentInfoService.processPayment(paymentInfo);
+            PaymentInfo processedPayment = paymentInfoService.processPayment(request);
             
             // Update checkout with payment info
             checkout.setPaymentInfo(processedPayment);

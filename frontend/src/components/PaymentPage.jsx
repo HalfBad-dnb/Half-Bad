@@ -238,7 +238,7 @@ const PaymentPage = () => {
     setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = sessionStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication required');
       }
@@ -263,15 +263,20 @@ const PaymentPage = () => {
           cardNumber: cleanCardNumber,
           expirationDate,
           cvv,
-          orderId: parseInt(sessionStorage.getItem('orderId'), 10),
-          paymentStatus: 'PENDING',
+          orderId: parseInt(sessionStorage.getItem('orderId') || '0', 10),
           cardholderName: cardholderName.trim()
         })
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Payment failed');
+        let errorMessage = 'Payment failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (e) {
+          console.error('Error parsing error response:', e);
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();

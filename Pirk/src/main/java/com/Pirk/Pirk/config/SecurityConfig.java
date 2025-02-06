@@ -18,6 +18,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import com.Pirk.Pirk.security.JwtAuthenticationFilter;
+import com.Pirk.Pirk.security.JwtTokenProviderInterface;
+import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
 public class SecurityConfig {
@@ -25,59 +27,77 @@ public class SecurityConfig {
     @Value("${jwt.secret}")
     private String jwtSecret;
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProviderInterface jwtTokenProvider;
 
-    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
-        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    public SecurityConfig(JwtTokenProviderInterface jwtTokenProvider) {
+        this.jwtTokenProvider = jwtTokenProvider;
+    }
+
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider);
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable) // Disabling CSRF (you can adjust this depending on your needs)
+            .csrf(AbstractHttpConfigurer::disable)
             .cors(cors -> cors.configurationSource(request -> {
                 var corsConfig = new org.springframework.web.cors.CorsConfiguration();
-                corsConfig.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000"));
-                corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                corsConfig.setAllowedOrigins(List.of("http://localhost:5173", "http://localhost:3000", "http://localhost:8081"));
+                corsConfig.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
                 corsConfig.setAllowedHeaders(List.of("Authorization", "Content-Type"));
                 corsConfig.setExposedHeaders(List.of("Authorization"));
                 corsConfig.setAllowCredentials(true);
                 corsConfig.setMaxAge(3600L);
                 return corsConfig;
             }))
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.deny())
+                .xssProtection(xss -> xss.disable())
+                .contentSecurityPolicy(csp -> csp.policyDirectives("default-src 'self'; frame-ancestors 'none';"))
+                .httpStrictTransportSecurity(hsts -> hsts.includeSubDomains(true).maxAgeInSeconds(31536000))
+            )
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                .maximumSessions(1)
+                .maxSessionsPreventsLogin(true)
+            )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/products/**", "/api/products/**", "/error").permitAll() // Open for all
-                .requestMatchers("/api/admin/**").hasRole("ADMIN") // Only admin can access
-                .anyRequest().authenticated() // Authenticate all other requests
+                .requestMatchers("/auth/**", "/products/**", "/api/products/**", "/error").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/info", "/api/orders/**", "/api/payments/**", "/api/checkout/**").authenticated()
+                .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)) // Handle unauthorized requests
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
             )
             .logout(logout -> logout
                 .logoutUrl("/logout")
                 .logoutSuccessHandler((request, response, authentication) -> response.setStatus(HttpStatus.OK.value()))
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID") // Ensure logout clears session
+                .clearAuthentication(true)
+                .deleteCookies("JSESSIONID")
                 .permitAll()
             )
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Add JWT filter
+            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder() {
-        SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA512"); // Secret key used to decode JWT
-        return NimbusJwtDecoder.withSecretKey(secretKey).build(); // Decoding JWT
+        SecretKeySpec secretKey = new SecretKeySpec(jwtSecret.getBytes(), "HmacSHA256");
+        return NimbusJwtDecoder.withSecretKey(secretKey).build();
     }
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(); // Using BCrypt to encode passwords
+        return new BCryptPasswordEncoder();
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
-        return authConfig.getAuthenticationManager(); // Authentication manager for handling login
+        return authConfig.getAuthenticationManager();
     }
 }

@@ -47,19 +47,26 @@ public class OrderService {
         }
     }
 
+    @Transactional(readOnly = true)
     public Order getOrderById(Long id) {
         return orderRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Order not found with id: " + id));
+            .orElseThrow(() -> {
+                logger.error("Order not found with id: {}", id);
+                return new RuntimeException("Order not found with id: " + id);
+            });
     }
 
     public List<Order> getOrdersByUserId(Long userId) {
-        return orderRepository.findByUserId(userId);
+        List<Order> orders = orderRepository.findByUserId(userId);
+        logger.info("Found {} orders for user {}", orders.size(), userId);
+        return orders;
     }
 
     @Transactional
     public Order updateOrderStatus(Long id, String status) {
         Order order = getOrderById(id);
         order.setStatus(status);
+        logger.info("Updated order {} status to {}", id, status);
         return orderRepository.save(order);
     }
 
@@ -68,5 +75,6 @@ public class OrderService {
         Order order = getOrderById(id);
         order.setStatus("CANCELLED");
         orderRepository.save(order);
+        logger.info("Cancelled order {}", id);
     }
 }

@@ -1,7 +1,9 @@
 package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.PaymentInfo;
+import com.Pirk.Pirk.models.PaymentRequest;
 import com.Pirk.Pirk.repositories.PaymentInfoRepository;
+import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,14 +27,24 @@ public class PaymentInfoServiceTest {
     private PaymentInfoService paymentInfoService;
 
     private PaymentInfo testPaymentInfo;
+    private PaymentRequest testPaymentRequest;
 
     @BeforeEach
     void setUp() {
         testPaymentInfo = new PaymentInfo();
         testPaymentInfo.setId(1L);
-        testPaymentInfo.setCardNumber("4111111111111111");
-        testPaymentInfo.setExpirationDate("12/25");
-        testPaymentInfo.setCvv("123");
+        testPaymentInfo.setCardholderName("John Doe");
+        testPaymentInfo.setLastFourDigits("1111");
+        testPaymentInfo.setOrderId(1L);
+        testPaymentInfo.setPaymentStatus("COMPLETED");
+
+        testPaymentRequest = new PaymentRequest();
+        testPaymentRequest.setCardNumber("4111111111111111");
+        testPaymentRequest.setExpirationDate("12/25");
+        testPaymentRequest.setCvv("123");
+        testPaymentRequest.setCardholderName("John Doe");
+        testPaymentRequest.setOrderId(1L);
+        testPaymentRequest.setBuyerId(1L);
     }
 
     @Test
@@ -45,9 +57,9 @@ public class PaymentInfoServiceTest {
 
         // Then
         assertTrue(result.isPresent());
-        assertEquals(testPaymentInfo.getCardNumber(), result.get().getCardNumber());
-        assertEquals(testPaymentInfo.getExpirationDate(), result.get().getExpirationDate());
-        assertEquals(testPaymentInfo.getCvv(), result.get().getCvv());
+        assertEquals(testPaymentInfo.getCardholderName(), result.get().getCardholderName());
+        assertEquals(testPaymentInfo.getLastFourDigits(), result.get().getLastFourDigits());
+        assertEquals(testPaymentInfo.getOrderId(), result.get().getOrderId());
         verify(paymentInfoRepository).findById(1L);
     }
 
@@ -69,9 +81,10 @@ public class PaymentInfoServiceTest {
         // Given
         PaymentInfo secondPaymentInfo = new PaymentInfo();
         secondPaymentInfo.setId(2L);
-        secondPaymentInfo.setCardNumber("5555555555554444");
-        secondPaymentInfo.setExpirationDate("01/26");
-        secondPaymentInfo.setCvv("456");
+        secondPaymentInfo.setCardholderName("Jane Doe");
+        secondPaymentInfo.setLastFourDigits("4444");
+        secondPaymentInfo.setOrderId(2L);
+        secondPaymentInfo.setPaymentStatus("COMPLETED");
 
         List<PaymentInfo> expectedList = Arrays.asList(testPaymentInfo, secondPaymentInfo);
         when(paymentInfoRepository.findAll()).thenReturn(expectedList);
@@ -82,8 +95,8 @@ public class PaymentInfoServiceTest {
         // Then
         assertNotNull(result);
         assertEquals(2, result.size());
-        assertEquals(testPaymentInfo.getCardNumber(), result.get(0).getCardNumber());
-        assertEquals(secondPaymentInfo.getCardNumber(), result.get(1).getCardNumber());
+        assertEquals(testPaymentInfo.getCardholderName(), result.get(0).getCardholderName());
+        assertEquals(secondPaymentInfo.getCardholderName(), result.get(1).getCardholderName());
         verify(paymentInfoRepository).findAll();
     }
 
@@ -99,5 +112,46 @@ public class PaymentInfoServiceTest {
         assertNotNull(result);
         assertTrue(result.isEmpty());
         verify(paymentInfoRepository).findAll();
+    }
+
+    @Test
+    void whenProcessPayment_withTestCard_thenReturnSuccessfulPayment() {
+        // Given
+        PaymentInfo successPayment = new PaymentInfo();
+        successPayment.setCardholderName("John Doe");
+        successPayment.setLastFourDigits("1111");
+        successPayment.setOrderId(1L);
+        successPayment.setPaymentStatus("COMPLETED");
+        when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(successPayment);
+
+        // When
+        PaymentInfo result = paymentInfoService.processPayment(testPaymentRequest);
+
+        // Then
+        assertNotNull(result);
+        assertEquals("COMPLETED", result.getPaymentStatus());
+        assertEquals("1111", result.getLastFourDigits());
+        assertEquals("John Doe", result.getCardholderName());
+        verify(paymentInfoRepository).save(any(PaymentInfo.class));
+    }
+
+    @Test
+    void whenProcessPayment_withDeclinedCard_thenThrowException() {
+        // Given
+        testPaymentRequest.setCardNumber("4111111111111112"); // Card that will be declined
+        PaymentInfo failedPayment = new PaymentInfo();
+        failedPayment.setCardholderName("John Doe");
+        failedPayment.setLastFourDigits("1112");
+        failedPayment.setOrderId(1L);
+        failedPayment.setPaymentStatus("FAILED");
+        when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(failedPayment);
+
+        // When & Then
+        Exception exception = assertThrows(PaymentDeclinedException.class, () -> {
+            paymentInfoService.processPayment(testPaymentRequest);
+        });
+        
+        assertEquals("Payment declined by gateway", exception.getMessage());
+        verify(paymentInfoRepository).save(any(PaymentInfo.class));
     }
 }

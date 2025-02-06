@@ -13,50 +13,71 @@ function ProfilePage() {
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
+        const token = sessionStorage.getItem("token");
+        console.log("Using token:", token); // Debug log
+        
+        if (!token) {
+          console.error("No token found in session storage");
+          navigate("/login");
+          return;
+        }
+        
         const response = await axios.get("http://localhost:8081/api/user/info", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
-        if (response.status === 200) {
+        if (response.status === 200 && response.data) {
+          console.log("User info response:", response.data); // Debug log
           setUser(response.data);
         }
       } catch (err) {
-        setError("Failed to fetch user info.");
+        console.error("Error fetching user info:", err.response?.data || err.message);
+        setError("Failed to fetch user info: " + (err.response?.data?.message || err.message));
+        if (err.response?.status === 401) {
+          // Handle unauthorized error
+          console.log("Unauthorized access, redirecting to login");
+          navigate("/login");
+        }
       }
     };
 
     fetchUserInfo();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!user) return; // Don't fetch orders if user is not loaded
 
     const fetchOrders = async () => {
       try {
-        const userId = user?.id; // Get user ID from user state
-        if (!userId) {
-          console.error("User ID not available");
+        const token = sessionStorage.getItem("token");
+        console.log("Using token for orders:", token); // Debug log
+        
+        if (!token) {
+          console.error("No token found in session storage");
+          navigate("/login");
           return;
         }
-
-        const response = await axios.get(`http://localhost:8081/api/orders/user/${userId}`, {
+        
+        const response = await axios.get("http://localhost:8081/api/orders/user", {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
         });
 
-        if (response.status === 200) {
+        if (response.status === 200 && response.data) {
+          console.log("Orders response:", response.data); // Debug log
           setOrders(response.data);
         }
       } catch (err) {
-        console.error("Failed to fetch orders:", err);
+        console.error("Error fetching orders:", err.response?.data || err.message);
+        setError("Failed to fetch orders: " + (err.response?.data?.message || err.message));
       }
     };
 
     fetchOrders();
-  }, [user]); // Only fetch orders after user is set
+  }, [user]);
 
   useEffect(() => {
     setTimeout(() => setTitleVisible(true), 500);
@@ -132,9 +153,22 @@ function ProfilePage() {
                 orders.map((order) => (
                   <div
                     key={order.id}
-                    className="bg-black bg-opacity-50 p-6 rounded-lg border border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-300"
+                    className={`bg-black bg-opacity-50 p-6 rounded-lg border ${
+                      order.paymentInfo?.paymentStatus === 'COMPLETED'
+                        ? 'border-green-500/40 hover:border-green-500/60'
+                        : 'border-red-500/40 hover:border-red-500/60'
+                    } transition-all duration-300`}
                   >
-                    <h3 className="text-xl font-semibold text-[#FFD700]">Order #{order.orderNumber}</h3>
+                    <div className="flex justify-between items-start">
+                      <h3 className="text-xl font-semibold text-[#FFD700]">Order #{order.orderNumber}</h3>
+                      <span className={`px-3 py-1 rounded-full text-sm ${
+                        order.paymentInfo?.paymentStatus === 'COMPLETED'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-red-500/20 text-red-400'
+                      }`}>
+                        {order.paymentInfo?.paymentStatus || 'PENDING'}
+                      </span>
+                    </div>
                     <div className="mt-3 space-y-2">
                       <p className="text-gray-300">
                         <span className="text-[#FFD700]">Date:</span>{" "}
@@ -146,7 +180,15 @@ function ProfilePage() {
                       <div className="mt-3">
                         <p className="text-[#FFD700]">Shipping Address:</p>
                         <p className="text-gray-300 text-sm mt-1">{order.shippingInfo.address}</p>
+                        <p className="text-gray-300 text-sm">{order.shippingInfo.city}, {order.shippingInfo.country}</p>
                       </div>
+                      {order.paymentInfo?.paymentStatus === 'COMPLETED' && (
+                        <div className="mt-3">
+                          <p className="text-[#FFD700]">Payment Details:</p>
+                          <p className="text-gray-300 text-sm mt-1">Card ending in {order.paymentInfo.lastFourDigits}</p>
+                          <p className="text-gray-300 text-sm">Paid on {new Date(order.paymentInfo.paymentDate).toLocaleString()}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -183,7 +225,7 @@ function ProfilePage() {
 
       {/* Footer */}
       <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p>© 2025 All Rights Reserved. HALF BAD™</p>
+        <p> 2025 All Rights Reserved. HALF BAD</p>
         <div className="mt-2">
           <ul className="flex justify-center space-x-6">
             <li>

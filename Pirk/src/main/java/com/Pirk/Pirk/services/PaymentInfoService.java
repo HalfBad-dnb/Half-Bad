@@ -1,7 +1,9 @@
 package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.PaymentInfo;
+import com.Pirk.Pirk.models.PaymentRequest;
 import com.Pirk.Pirk.repositories.PaymentInfoRepository;
+import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,42 +28,58 @@ public class PaymentInfoService {
         return paymentInfoRepository.findAll();
     }
 
-    public PaymentInfo processPayment(PaymentInfo paymentInfo) {
+    public PaymentInfo processPayment(PaymentRequest request) {
         // Validate payment information
-        validatePaymentInfo(paymentInfo);
+        validatePaymentRequest(request);
+
+        // Create PaymentInfo with only non-sensitive data
+        PaymentInfo paymentInfo = new PaymentInfo();
+        paymentInfo.setCardholderName(request.getCardholderName());
+        paymentInfo.setLastFourDigits(getLastFourDigits(request.getCardNumber()));
+        paymentInfo.setOrderId(request.getOrderId());
+        paymentInfo.setBuyerId(request.getBuyerId());
 
         try {
-            // Simulate payment processing
-            boolean paymentSuccessful = processPaymentWithGateway(paymentInfo);
+            // Process payment with external payment gateway (simulated)
+            boolean paymentSuccessful = processPaymentWithGateway(request);
             
             if (paymentSuccessful) {
                 paymentInfo.setPaymentStatus("COMPLETED");
+                return paymentInfoRepository.save(paymentInfo);
             } else {
                 paymentInfo.setPaymentStatus("FAILED");
-                throw new RuntimeException("Payment processing failed");
+                paymentInfoRepository.save(paymentInfo);
+                throw new PaymentDeclinedException("Payment declined by gateway");
             }
-
-            return paymentInfoRepository.save(paymentInfo);
+        } catch (PaymentDeclinedException e) {
+            // Re-throw payment declined exceptions
+            throw e;
         } catch (Exception e) {
-            paymentInfo.setPaymentStatus("FAILED");
-            paymentInfoRepository.save(paymentInfo);
-            throw new RuntimeException("Payment processing failed: " + e.getMessage());
+            // If we get here, it means there was an unexpected error, not a declined payment
+            throw new RuntimeException("Error processing payment: " + e.getMessage());
         }
     }
 
-    private void validatePaymentInfo(PaymentInfo paymentInfo) {
-        if (paymentInfo.getOrderId() == null) {
+    private void validatePaymentRequest(PaymentRequest request) {
+        if (request.getOrderId() == null) {
             throw new IllegalArgumentException("Order ID is required");
         }
-        if (paymentInfo.getCardNumber() == null || !paymentInfo.getCardNumber().matches("\\d{16}")) {
+        if (request.getCardNumber() == null || !request.getCardNumber().matches("\\d{16}")) {
             throw new IllegalArgumentException("Invalid card number");
         }
-        if (paymentInfo.getCvv() == null || !paymentInfo.getCvv().matches("\\d{3,4}")) {
+        if (request.getCvv() == null || !request.getCvv().matches("\\d{3,4}")) {
             throw new IllegalArgumentException("Invalid CVV");
         }
-        if (paymentInfo.getExpirationDate() == null || !isExpirationDateValid(paymentInfo.getExpirationDate())) {
+        if (request.getExpirationDate() == null || !isExpirationDateValid(request.getExpirationDate())) {
             throw new IllegalArgumentException("Invalid expiration date");
         }
+        if (request.getCardholderName() == null || request.getCardholderName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Cardholder name is required");
+        }
+    }
+
+    private String getLastFourDigits(String cardNumber) {
+        return cardNumber.substring(cardNumber.length() - 4);
     }
 
     private boolean isExpirationDateValid(String expDate) {
@@ -79,22 +97,18 @@ public class PaymentInfoService {
         return !expiry.isBefore(now);
     }
 
-    private boolean processPaymentWithGateway(PaymentInfo paymentInfo) {
-        // TODO: Integrate with a real payment gateway
-        // For now, simulate payment processing with a 90% success rate
-        return Math.random() < 0.9;
-    }
-
-    public PaymentInfo updatePaymentInfo(Long id, PaymentInfo paymentInfo) {
-        PaymentInfo existingPaymentInfo = getPaymentInfo(id)
-            .orElseThrow(() -> new RuntimeException("Payment info not found"));
-        
-        // Update the fields
-        existingPaymentInfo.setCardNumber(paymentInfo.getCardNumber());
-        existingPaymentInfo.setExpirationDate(paymentInfo.getExpirationDate());
-        existingPaymentInfo.setCvv(paymentInfo.getCvv());
-        
-        return paymentInfoRepository.save(existingPaymentInfo);
+    private boolean processPaymentWithGateway(PaymentRequest request) {
+        // In a real application, this would integrate with a payment gateway
+        // For testing purposes:
+        // - Approve payments with test card number 4111111111111111
+        // - Decline payments with test card number 4111111111111112
+        // - For all other cards, approve the payment
+        if (request.getCardNumber().equals("4111111111111111")) {
+            return true;
+        } else if (request.getCardNumber().equals("4111111111111112")) {
+            return false;
+        }
+        return true;
     }
 
     public void deletePaymentInfo(Long id) {

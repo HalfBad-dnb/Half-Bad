@@ -2,6 +2,7 @@ package com.Pirk.Pirk.controllers;
 
 import com.Pirk.Pirk.models.PaymentInfo;
 import com.Pirk.Pirk.services.PaymentInfoService;
+import com.Pirk.Pirk.models.PaymentRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,12 +21,12 @@ public class PaymentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> processPayment(@RequestBody PaymentInfo paymentInfo) {
+    public ResponseEntity<?> processPayment(@RequestBody PaymentRequest request) {
         try {
-            // Ensure payment info is validated and card details are processed securely
-            PaymentInfo processedPayment = paymentInfoService.processPayment(paymentInfo);
+            // Process the payment using the PaymentRequest
+            PaymentInfo processedPayment = paymentInfoService.processPayment(request);
             
-            // Assuming 'paymentStatus' is updated based on payment gateway response
+            // Check payment status and return appropriate response
             if ("COMPLETED".equals(processedPayment.getPaymentStatus())) {
                 return ResponseEntity.ok()
                     .body(Map.of(
@@ -48,7 +49,6 @@ public class PaymentController {
                     "message", "Invalid payment details: " + e.getMessage()
                 ));
         } catch (CardProcessingException e) {
-            // This would be a custom exception for handling payment gateway-specific errors
             return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
                 .body(Map.of(
                     "status", "error",
@@ -77,21 +77,6 @@ public class PaymentController {
                         )));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updatePaymentInfo(
-            @PathVariable Long id,
-            @RequestBody PaymentInfo paymentInfo) {
-        try {
-            PaymentInfo updatedPaymentInfo = paymentInfoService.updatePaymentInfo(id, paymentInfo);
-            return ResponseEntity.ok(updatedPaymentInfo);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of(
-                        "status", "error",
-                        "message", "Failed to update payment info: " + e.getMessage()
-                    ));
-        }
-    }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Map<String, String>> deletePaymentInfo(@PathVariable Long id) {

@@ -78,7 +78,7 @@ public class AuthControllerTest {
         // Default mock behavior
         when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
         when(passwordEncoder.matches(anyString(), anyString())).thenReturn(true);
-        when(jwtTokenProvider.generateToken(anyString(), any())).thenReturn("valid.jwt.token");
+        when(jwtTokenProvider.generateToken(anyString(), any(Long.class), any())).thenReturn("valid.jwt.token");
     }
 
     // Registration Validation Tests
@@ -285,7 +285,7 @@ public class AuthControllerTest {
         JwtResponse jwtResponse = (JwtResponse) responseBody;
         assertEquals("valid.jwt.token", jwtResponse.getToken());
         verify(passwordEncoder).matches(validLoginRequest.getPassword(), existingUser.getPassword());
-        verify(jwtTokenProvider).generateToken(eq(existingUser.getUsername()), any());
+        verify(jwtTokenProvider).generateToken(eq(existingUser.getUsername()), eq(existingUser.getId()), any());
     }
 
     @Test
@@ -302,7 +302,7 @@ public class AuthControllerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody(), "Response body should not be null");
         assertEquals("Invalid username or password", response.getBody());
-        verify(jwtTokenProvider, never()).generateToken(anyString(), any());
+        verify(jwtTokenProvider, never()).generateToken(anyString(), any(Long.class), any());
     }
 
     @Test
@@ -320,7 +320,7 @@ public class AuthControllerTest {
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         assertNotNull(response.getBody(), "Response body should not be null");
         assertEquals("Invalid username or password", response.getBody());
-        verify(jwtTokenProvider, never()).generateToken(anyString(), any());
+        verify(jwtTokenProvider, never()).generateToken(anyString(), any(Long.class), any());
     }
 
     @Test
@@ -337,6 +337,7 @@ public class AuthControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(jwtTokenProvider).generateToken(
             eq(existingUser.getUsername()),
+            eq(existingUser.getId()),
             eq(List.of(User.Role.USER.toString()))
         );
     }

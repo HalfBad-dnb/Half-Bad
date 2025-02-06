@@ -68,7 +68,7 @@ public class AuthController {
       }
 
       // Generate token for the new user
-      String token = jwtUtils.generateToken(user.getUsername(), List.of(user.getRole().toString()));
+      String token = jwtUtils.generateToken(user.getUsername(), user.getId(), List.of(user.getRole().toString()));
       return ResponseEntity.ok(new JwtResponse(token));
     } catch (Exception e) {
       return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
@@ -100,9 +100,15 @@ public class AuthController {
       user.setLastLoginAt(LocalDateTime.now());
       userRepository.save(user);
 
-      // Generate and return JWT token
-      String token = jwtUtils.generateToken(user.getUsername(), List.of(user.getRole().toString()));
-      return ResponseEntity.ok(new JwtResponse(token));
+      // Generate token with user ID and return response with user info
+      String token = jwtUtils.generateToken(user.getUsername(), user.getId(), List.of(user.getRole().toString()));
+      return ResponseEntity.ok(new JwtResponse(
+          token,
+          user.getId(),
+          user.getUsername(),
+          user.getEmail(),
+          user.getRole().toString()
+      ));
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
           .body("Login failed: " + e.getMessage());

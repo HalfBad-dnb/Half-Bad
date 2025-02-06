@@ -37,7 +37,17 @@ function LoginPage({ setIsAuthenticated }) {
       }
 
       const data = await response.json();
+      console.log('Login response:', data);
+      
+      // Store token without Bearer prefix
       sessionStorage.setItem("token", data.token);
+      
+      // Store user info
+      sessionStorage.setItem("userId", data.userId);
+      sessionStorage.setItem("username", data.username);
+      sessionStorage.setItem("email", data.email);
+      sessionStorage.setItem("role", data.role);
+      
       setIsAuthenticated(true);
       // Check if there's a return URL in the state
       const returnUrl = location.state?.returnUrl || "/profile";
