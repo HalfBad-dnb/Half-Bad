@@ -11,16 +11,12 @@ import lombok.Builder;
 @NoArgsConstructor
 @AllArgsConstructor
 @Entity
-@Table(name = "shipping_info")
-public class ShippingInfo {
-
+@Table(name = "shipping_addresses")
+public class ShippingAddress {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "recipient_name", nullable = false)
-    private String recipientName;
-    
     @Column(name = "street_address", nullable = false)
     private String streetAddress;
 
@@ -37,21 +33,4 @@ public class ShippingInfo {
 
     @Column(name = "phone_number")
     private String phoneNumber;
-
-    // Get full address as a concatenated string
-    public String getAddress() {
-        return String.format("%s, %s, %s, %s %s, %s",
-            recipientName,
-            streetAddress,
-            city,
-            state != null ? state + "," : "",
-            postalCode,
-            country);
-    }
-
-    // Override toString for a formatted output
-    @Override
-    public String toString() {
-        return getAddress();
-    }
 }

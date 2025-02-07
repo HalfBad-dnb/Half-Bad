@@ -1,35 +1,47 @@
 package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 
-/**
- * Represents a checkout in the Pirk system.
- */
+@Data
+@Builder
+
+@AllArgsConstructor
 @Entity
 @Table(name = "checkouts")
 public class Checkout {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;  // Unique identifier for the checkout
+    private Long id;
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user;  // The user who is making the checkout
+    private User user;
 
     @ManyToOne
     @JoinColumn(name = "cart_id", nullable = false)
-    private Cart cart;  // The cart being checked out
+    private Cart cart;
 
-    private double totalAmount;  // The total amount for the checkout
-    private String paymentMethod;  // E.g., "Credit Card", "PayPal"
-    private String shippingAddress;  // Shipping address for the order
-    private String orderStatus;  // Order status (e.g., "Pending", "Completed")
-    private String paymentStatus;  // Payment status (e.g., "Paid", "Pending")
+    private double totalAmount;
+    
+    @Column(name = "payment_method")
+    private String paymentMethod;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "shipping_address_id")
+    private ShippingAddress shippingAddress;
+
+    @Column(name = "order_status")
+    private String orderStatus;
+
+    @Column(name = "payment_status")
+    private String paymentStatus;
 
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "payment_info_id")
-    private PaymentInfo paymentInfo;  // Payment information
+    private PaymentInfo paymentInfo;
 
     // Default constructor
     public Checkout() {
@@ -81,11 +93,11 @@ public class Checkout {
     }
 
     // Getter and Setter for shippingAddress
-    public String getShippingAddress() {
+    public ShippingAddress getShippingAddress() {
         return shippingAddress;
     }
 
-    public void setShippingAddress(String shippingAddress) {
+    public void setShippingAddress(ShippingAddress shippingAddress) {
         this.shippingAddress = shippingAddress;
     }
 

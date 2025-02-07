@@ -77,6 +77,26 @@ public class OrderService implements OrderServiceInterface {
     }
 
     @Transactional
+    public Order updateOrder(Order order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order cannot be null");
+        }
+        if (order.getId() == null) {
+            throw new IllegalArgumentException("Order ID cannot be null");
+        }
+
+        try {
+            logger.info("Updating order with ID: {}", order.getId());
+            Order updatedOrder = orderRepository.save(order);
+            logger.info("Order updated successfully");
+            return updatedOrder;
+        } catch (Exception e) {
+            logger.error("Error updating order: {}", e.getMessage());
+            throw new RuntimeException("Failed to update order: " + e.getMessage());
+        }
+    }
+
+    @Transactional
     public void cancelOrder(Long id) {
         Order order = getOrderById(id);
         order.setStatus("CANCELLED");

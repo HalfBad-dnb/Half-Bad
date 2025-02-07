@@ -2,6 +2,7 @@ package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.Cart;
 import com.Pirk.Pirk.models.Checkout;
+import com.Pirk.Pirk.models.ShippingAddress;
 import com.Pirk.Pirk.models.User;
 import com.Pirk.Pirk.repositories.CheckoutRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,7 +49,15 @@ public class CheckoutServiceTest {
         testCheckout.setCart(testCart);
         testCheckout.setTotalAmount(100.0);
         testCheckout.setPaymentMethod("Credit Card");
-        testCheckout.setShippingAddress("123 Test St");
+        ShippingAddress address = ShippingAddress.builder()
+            .streetAddress("123 Test St")
+            .city("Test City")
+            .state("Test State")
+            .postalCode("12345")
+            .country("Test Country")
+            .phoneNumber("+1234567890")
+            .build();
+        testCheckout.setShippingAddress(address);
         testCheckout.setOrderStatus("Pending");
         testCheckout.setPaymentStatus("Pending");
     }
@@ -63,7 +72,15 @@ public class CheckoutServiceTest {
         newCheckout.setUser(testUser);
         newCheckout.setCart(testCart);
         newCheckout.setPaymentMethod("Credit Card");
-        newCheckout.setShippingAddress("123 Test St");
+        ShippingAddress address = ShippingAddress.builder()
+            .streetAddress("123 Test St")
+            .city("Test City")
+            .state("Test State")
+            .postalCode("12345")
+            .country("Test Country")
+            .phoneNumber("+1234567890")
+            .build();
+        newCheckout.setShippingAddress(address);
 
         // When
         Checkout result = checkoutService.createCheckout(newCheckout);
@@ -149,7 +166,15 @@ public class CheckoutServiceTest {
         testCheckout.setUser(testUser);
         testCheckout.setCart(testCart);
         testCheckout.setPaymentMethod("Credit Card");
-        testCheckout.setShippingAddress("123 Test St");
+        ShippingAddress address = ShippingAddress.builder()
+            .streetAddress("123 Test St")
+            .city("Test City")
+            .state("Test State")
+            .postalCode("12345")
+            .country("Test Country")
+            .phoneNumber("+1234567890")
+            .build();
+        testCheckout.setShippingAddress(address);
         
         when(checkoutRepository.save(any(Checkout.class))).thenReturn(testCheckout);
 

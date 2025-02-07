@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS product_colors CASCADE;
 DROP TABLE IF EXISTS product_sizes CASCADE;
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS shipping_info CASCADE;
+DROP TABLE IF EXISTS shipping_addresses CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS carts CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
@@ -53,6 +54,17 @@ CREATE TABLE product_sizes (
     product_id BIGINT NOT NULL,
     size VARCHAR(50) NOT NULL,
     CONSTRAINT fk_product_sizes FOREIGN KEY (product_id) REFERENCES products(id)
+);
+
+-- Create shipping_addresses table
+CREATE TABLE shipping_addresses (
+    id BIGSERIAL PRIMARY KEY,
+    street_address VARCHAR(255) NOT NULL,
+    city VARCHAR(100) NOT NULL,
+    state VARCHAR(100),
+    postal_code VARCHAR(20) NOT NULL,
+    country VARCHAR(100) NOT NULL,
+    phone_number VARCHAR(20)
 );
 
 -- Create shipping_info table (referenced by orders)
