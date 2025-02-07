@@ -12,6 +12,7 @@ import com.Pirk.Pirk.models.PaymentRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
+import java.math.BigDecimal;
 
 @RestController
 @RequestMapping("/api/checkout")
@@ -83,7 +84,7 @@ public class CheckoutController {
             order.setShippingInfo(shippingInfo);
             
             order.setPaymentInfo(checkout.getPaymentInfo());
-            order.setTotalAmount(checkout.getTotalAmount());
+            order.setTotalAmount(BigDecimal.valueOf(checkout.getTotalAmount()));
             
             // Save the order
             Order savedOrder = orderService.createOrder(order);

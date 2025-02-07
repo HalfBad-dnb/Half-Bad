@@ -12,38 +12,30 @@ public class CartItem {
     private Long id;
 
     @ManyToOne
-    @JoinColumn(name = "cart_id")
-    private Cart cart;
+    @JoinColumn(name = "order_id")
+    private Order order;
 
     @ManyToOne
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "product_id", nullable = false)
     private Product product;
 
     private int quantity;
 
-    private BigDecimal price;  // Changed to BigDecimal for accurate pricing
+    @Column(precision = 10, scale = 2, nullable = false)
+    private BigDecimal price;
 
     @ManyToOne
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "cart_id")
+    private Cart cart;
 
-    // Default constructor
+    // Default constructor (needed by JPA)
     public CartItem() {}
 
-    // Constructor with all fields, updated to use BigDecimal for price
-    public CartItem(Product product, int quantity, BigDecimal price, Cart cart, User user) {
-        this.product = product;
-        this.quantity = quantity;
-        this.price = price;
-        this.cart = cart;
-        this.user = user;
-    }
-
-    // Constructor matching the parameters (Product, int, double, Cart)
+    // Constructor including Cart
     public CartItem(Product product, int quantity, double price, Cart cart) {
         this.product = product;
         this.quantity = quantity;
-        this.price = BigDecimal.valueOf(price);  // Convert double to BigDecimal
+        this.price = BigDecimal.valueOf(price); // Converting double to BigDecimal for consistency
         this.cart = cart;
     }
 
@@ -56,12 +48,12 @@ public class CartItem {
         this.id = id;
     }
 
-    public Cart getCart() {
-        return cart;
+    public Order getOrder() {
+        return order;
     }
 
-    public void setCart(Cart cart) {
-        this.cart = cart;
+    public void setOrder(Order order) {
+        this.order = order;
     }
 
     public Product getProduct() {
@@ -88,11 +80,15 @@ public class CartItem {
         this.price = price;
     }
 
-    public User getUser() {
-        return user;
+    public BigDecimal getSubtotal() {
+        return price.multiply(BigDecimal.valueOf(quantity));
     }
 
-    public void setUser(User user) {
-        this.user = user;
+    public Cart getCart() {
+        return cart;
+    }
+
+    public void setCart(Cart cart) {
+        this.cart = cart;
     }
 }

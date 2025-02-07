@@ -57,9 +57,15 @@ public class OrderService implements OrderServiceInterface {
     }
 
     public List<Order> getOrdersByUserId(Long userId) {
-        List<Order> orders = orderRepository.findByUserId(userId);
-        logger.info("Found {} orders for user {}", orders.size(), userId);
-        return orders;
+        logger.info("Attempting to fetch orders for user ID: {}", userId);
+        try {
+            List<Order> orders = orderRepository.findByUserId(userId);
+            logger.info("Successfully retrieved {} orders for user ID: {}", orders.size(), userId);
+            return orders;
+        } catch (Exception e) {
+            logger.error("Error fetching orders for user ID {}: {}", userId, e.getMessage(), e);
+            throw new RuntimeException("Failed to fetch orders: " + e.getMessage(), e);
+        }
     }
 
     @Transactional

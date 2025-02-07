@@ -2,11 +2,12 @@ package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
 @Entity
-@Table(name = "orders") // Using "orders" since "order" is a reserved word in SQL
+@Table(name = "orders")
 public class Order {
 
     @Id
@@ -14,12 +15,16 @@ public class Order {
     private Long id;
 
     private String username;
+
+    @Column(name = "order_number", nullable = false)
     private String orderNumber;
 
+    @Column(name = "order_date", nullable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date orderDate;
 
-    private double totalAmount;
+    @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
+    private BigDecimal totalAmount;
 
     @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JoinColumn(name = "shipping_info_id")
@@ -29,10 +34,10 @@ public class Order {
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     private PaymentInfo paymentInfo;
 
-    @Column(nullable = false)
-    private Boolean emailSent = false;  // Fix: Ensure it is never null
+    @Column(name = "email_sent", nullable = false)
+    private Boolean emailSent = false;
 
-    @Column(nullable = false)
+    @Column(name = "user_id", nullable = false)
     private Long userId;
 
     @Column(nullable = false)
@@ -46,6 +51,9 @@ public class Order {
     protected void onCreate() {
         orderDate = new Date();
         orderNumber = generateOrderNumber();
+        if (totalAmount == null) {
+            totalAmount = BigDecimal.ZERO;
+        }
     }
 
     private String generateOrderNumber() {
@@ -85,11 +93,11 @@ public class Order {
         this.orderDate = orderDate;
     }
 
-    public double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 
@@ -139,5 +147,15 @@ public class Order {
 
     public void setCartItems(List<CartItem> cartItems) {
         this.cartItems = cartItems;
+    }
+
+    public void calculateTotalAmount() {
+        if (cartItems == null || cartItems.isEmpty()) {
+            this.totalAmount = BigDecimal.ZERO;
+            return;
+        }
+        this.totalAmount = cartItems.stream()
+            .map(CartItem::getSubtotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

@@ -9,17 +9,17 @@ import java.util.List;
 public class Cart {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Automatically generates the id
-    private Long id;  // Unique identifier for the cart
-    
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
-    private User user; // Association with User
-    
+    private User user;
+
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CartItem> cartItems;  // A list of cart items
-    
-    private double totalPrice;  // Keeping the original type
+    private List<CartItem> cartItems;
+
+    private double totalPrice;
 
     public Cart() {
         this.cartItems = new ArrayList<>();
@@ -29,7 +29,7 @@ public class Cart {
     // Add product to the cart
     public void addItem(Product product, int quantity, double price) {
         CartItem existingItem = findCartItem(product.getId());
-        
+
         if (existingItem != null) {
             // Update quantity if the product already exists in the cart
             existingItem.setQuantity(existingItem.getQuantity() + quantity);
@@ -38,7 +38,6 @@ public class Cart {
             CartItem newItem = new CartItem(product, quantity, price, this);
             cartItems.add(newItem);
         }
-        // Update the total price
         updateTotalPrice(price * quantity);
     }
 
@@ -53,7 +52,7 @@ public class Cart {
             } else {
                 itemToRemove.setQuantity(currentQuantity - quantity);  // Decrease the quantity
             }
-            updateTotalPrice(-price * quantity);  // Update total price
+            updateTotalPrice(-price * quantity);
         }
     }
 
@@ -96,18 +95,16 @@ public class Cart {
         this.user = user;
     }
 
-    // Clear cart (optional method)
+    // Clear cart
     public void clearCart() {
         cartItems.clear();
         totalPrice = 0.0;
     }
 
-    // Getter for id
     public Long getId() {
         return id;
     }
 
-    // Setter for id
     public void setId(Long id) {
         this.id = id;
     }

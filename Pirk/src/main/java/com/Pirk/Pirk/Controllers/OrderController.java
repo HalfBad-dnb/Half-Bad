@@ -102,12 +102,26 @@ public class OrderController {
     public ResponseEntity<?> getUserOrders() {
         try {
             Long userId = getCurrentUserId();
+            logger.info("Fetching orders for user ID: {}", userId);
+            
             List<Order> orders = orderService.getOrdersByUserId(userId);
+            logger.info("Successfully retrieved {} orders for user ID: {}", orders.size(), userId);
+            
             return ResponseEntity.ok(orders);
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("User ID not found")) {
+                logger.error("Authentication error: {}", e.getMessage());
+                return ResponseEntity.status(401)
+                    .body(Map.of("error", "Authentication required: " + e.getMessage()));
+            } else {
+                logger.error("Error fetching user orders: {}", e.getMessage(), e);
+                return ResponseEntity.status(500)
+                    .body(Map.of("error", "Internal server error while fetching orders"));
+            }
         } catch (Exception e) {
-            logger.error("Failed to get user orders: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                .body(Map.of("error", "Failed to get user orders: " + e.getMessage()));
+            logger.error("Unexpected error fetching user orders: {}", e.getMessage(), e);
+            return ResponseEntity.status(500)
+                .body(Map.of("error", "An unexpected error occurred while fetching orders"));
         }
     }
 

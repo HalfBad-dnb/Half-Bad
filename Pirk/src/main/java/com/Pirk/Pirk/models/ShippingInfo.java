@@ -5,21 +5,33 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "shipping_info")
 public class ShippingInfo {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "full_name")
-    private String fullName;
+    @Column(name = "recipient_name", nullable = false)
+    private String recipientName;
     
-    private String address;
+    @Column(name = "street_address", nullable = false)
+    private String streetAddress;
+
+    @Column(nullable = false)
     private String city;
-    private String email;
+
+    private String state;
     
-    @Column(name = "postal_code")
+    @Column(name = "postal_code", nullable = false)
     private String postalCode;
     
+    @Column(nullable = false)
     private String country;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
+    // Default constructor
+    public ShippingInfo() {}
 
     // Getters and setters
     public Long getId() {
@@ -30,20 +42,20 @@ public class ShippingInfo {
         this.id = id;
     }
 
-    public String getFullName() {
-        return fullName;
+    public String getRecipientName() {
+        return recipientName;
     }
 
-    public void setFullName(String fullName) {
-        this.fullName = fullName;
+    public void setRecipientName(String recipientName) {
+        this.recipientName = recipientName;
     }
 
-    public String getAddress() {
-        return address;
+    public String getStreetAddress() {
+        return streetAddress;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setStreetAddress(String streetAddress) {
+        this.streetAddress = streetAddress;
     }
 
     public String getCity() {
@@ -54,12 +66,12 @@ public class ShippingInfo {
         this.city = city;
     }
 
-    public String getEmail() {
-        return email;
+    public String getState() {
+        return state;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setState(String state) {
+        this.state = state;
     }
 
     public String getPostalCode() {
@@ -78,8 +90,38 @@ public class ShippingInfo {
         this.country = country;
     }
 
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    // Get full address as a concatenated string
+    public String getAddress() {
+        return String.format("%s, %s, %s, %s %s, %s", 
+            streetAddress, city, 
+            state != null ? state + ", " : "", 
+            postalCode, country);
+    }
+
+    // Set full address with a single string (you may want to split it accordingly in real cases)
+    public void setAddress(String address) {
+        // For simplicity, assuming the address string contains all necessary info
+        String[] parts = address.split(", ");
+        if (parts.length >= 5) {
+            this.streetAddress = parts[0];
+            this.city = parts[1];
+            this.state = parts[2];
+            this.postalCode = parts[3];
+            this.country = parts[4];
+        }
+    }
+
+    // Override toString for a formatted output
     @Override
     public String toString() {
-        return String.format("%s, %s, %s %s, %s", fullName, address, city, postalCode, country);
+        return getAddress();
     }
 }
