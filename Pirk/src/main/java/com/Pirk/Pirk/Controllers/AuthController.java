@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/auth")
 public class AuthController {
 
   private final UserRepository userRepository;
@@ -69,7 +69,15 @@ public class AuthController {
 
       // Generate token for the new user
       String token = jwtUtils.generateToken(user.getUsername(), user.getId(), List.of(user.getRole().toString()));
-      return ResponseEntity.ok(new JwtResponse(token));
+      
+      // Create response with all user details
+      JwtResponse response = new JwtResponse(token);
+      response.setUserId(user.getId());
+      response.setUsername(user.getUsername());
+      response.setEmail(user.getEmail());
+      response.setRole(user.getRole().toString());
+      
+      return ResponseEntity.ok(response);
     } catch (Exception e) {
       return ResponseEntity.badRequest().body("Registration failed: " + e.getMessage());
     }

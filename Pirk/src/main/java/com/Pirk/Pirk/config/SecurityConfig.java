@@ -64,9 +64,9 @@ public class SecurityConfig {
                 .maxSessionsPreventsLogin(true)
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/auth/**", "/products/**", "/api/products/**", "/error").permitAll()
+                .requestMatchers("/api/auth/**", "/api/products/**", "/error").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/info", "/api/orders/**", "/api/payments/**", "/api/checkout/**").authenticated()
+                .requestMatchers("/api/user/info", "/api/orders/**", "/api/payments/**", "/api/checkout/**", "/api/cart/**").authenticated()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

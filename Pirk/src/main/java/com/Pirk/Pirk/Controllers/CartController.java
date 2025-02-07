@@ -26,11 +26,12 @@ public class CartController {
         return ResponseEntity.ok(cartService.getCartByUserId(userId));
     }
 
-    @PostMapping("/{cartId}/items")
+    @PostMapping("/{userId}/items")
     public ResponseEntity<CartItem> addItemToCart(
-            @PathVariable Long cartId,
+            @PathVariable Long userId,
             @RequestBody CartItem cartItem) {
-        return ResponseEntity.ok(cartItemService.addItemToCart(cartId, cartItem));
+        Cart cart = cartService.getCartByUserId(userId);
+        return ResponseEntity.ok(cartItemService.addItemToCart(cart.getId(), cartItem));
     }
 
     @PutMapping("/items/{itemId}")

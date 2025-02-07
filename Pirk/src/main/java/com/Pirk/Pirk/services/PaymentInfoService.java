@@ -1,12 +1,19 @@
 package com.Pirk.Pirk.services;
 
+import com.Pirk.Pirk.models.Order;
 import com.Pirk.Pirk.models.PaymentInfo;
 import com.Pirk.Pirk.models.PaymentRequest;
+import com.Pirk.Pirk.repositories.OrderRepository;
 import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,31 +21,93 @@ import java.util.Optional;
 public class PaymentInfoService {
 
     private final PaymentInfoRepository paymentInfoRepository;
+    private final OrderRepository orderRepository;
 
     @Autowired
-    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository) {
+    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository, OrderRepository orderRepository) {
         this.paymentInfoRepository = paymentInfoRepository;
+        this.orderRepository = orderRepository;
     }
 
-    // Changed visibility to protected for testing purposes
-    protected boolean simulatePaymentProcessing(String cardNumber) {
-        // Simulated logic for payment processing
-        return cardNumber.endsWith("2"); // Example logic: Payment approved if card ends in "2"
-    }
-
-    // Method to process the payment
-    public PaymentInfo processPayment(PaymentRequest paymentRequest) {
-        boolean paymentSuccess = simulatePaymentProcessing(paymentRequest.getCardNumber());
-        if (!paymentSuccess) {
-            throw new PaymentDeclinedException("Payment was declined. Please check your card details and try again.");
+    private boolean validateCardNumber(String cardNumber) {
+        if (cardNumber == null || cardNumber.trim().isEmpty()) {
+            return false;
         }
+        
+        // Remove any spaces or dashes
+        cardNumber = cardNumber.replaceAll("[ -]", "");
+        
+        // Check if the card number contains only digits and has valid length (13-19 digits)
+        if (!cardNumber.matches("\\d{13,19}")) {
+            return false;
+        }
+        
+        // Luhn algorithm for card number validation
+        int sum = 0;
+        boolean alternate = false;
+        for (int i = cardNumber.length() - 1; i >= 0; i--) {
+            int n = Integer.parseInt(cardNumber.substring(i, i + 1));
+            if (alternate) {
+                n *= 2;
+                if (n > 9) {
+                    n = (n % 10) + 1;
+                }
+            }
+            sum += n;
+            alternate = !alternate;
+        }
+        return (sum % 10 == 0);
+    }
+
+    private boolean validateExpirationDate(String expirationDate) {
+        try {
+            // Parse the expiration date (format: MM/YY)
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/yy");
+            YearMonth expiry = YearMonth.parse(expirationDate, formatter);
+            YearMonth now = YearMonth.now();
+            
+            // Check if the card has not expired
+            return !expiry.isBefore(now);
+        } catch (DateTimeParseException e) {
+            return false;
+        }
+    }
+
+    private boolean validateCVV(String cvv) {
+        // CVV should be 3 or 4 digits
+        return cvv != null && cvv.matches("\\d{3,4}");
+    }
+
+    @Transactional
+    public PaymentInfo processPayment(PaymentRequest paymentRequest) {
+        // Validate card number
+        if (!validateCardNumber(paymentRequest.getCardNumber())) {
+            throw new PaymentDeclinedException("Invalid card number");
+        }
+
+        // Validate expiration date
+        if (!validateExpirationDate(paymentRequest.getExpirationDate())) {
+            throw new PaymentDeclinedException("Card has expired or invalid expiration date format (MM/YY)");
+        }
+
+        // Validate CVV
+        if (!validateCVV(paymentRequest.getCvv())) {
+            throw new PaymentDeclinedException("Invalid CVV");
+        }
+
+        // Get the order
+        Order order = orderRepository.findById(paymentRequest.getOrderId())
+                .orElseThrow(() -> new RuntimeException("Order not found"));
 
         // Create PaymentInfo and set all necessary fields
         PaymentInfo paymentInfo = new PaymentInfo();
         paymentInfo.setPaymentStatus("COMPLETED");
         paymentInfo.setCardholderName(paymentRequest.getCardHolderName());
         paymentInfo.setLastFourDigits(paymentRequest.getCardNumber().substring(paymentRequest.getCardNumber().length() - 4));
-        paymentInfo.setOrderId(paymentRequest.getOrderId());
+        paymentInfo.setOrder(order);
+        paymentInfo.setBuyerId(paymentRequest.getBuyerId());
+
+        // Save and return the payment info
         return paymentInfoRepository.save(paymentInfo);
     }
 

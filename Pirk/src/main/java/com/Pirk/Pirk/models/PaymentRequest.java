@@ -8,6 +8,10 @@ public class PaymentRequest {
     private Long orderId;
     private Long buyerId;
 
+    // Default constructor
+    public PaymentRequest() {
+    }
+
     public PaymentRequest(String cardHolderName, String cardNumber, String expirationDate, String cvv, Long orderId) {
         this.cardHolderName = cardHolderName;
         this.cardNumber = cardNumber;

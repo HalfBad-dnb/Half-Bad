@@ -2,8 +2,10 @@ package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.Cart;
 import com.Pirk.Pirk.models.CartItem;
+import com.Pirk.Pirk.models.Product;
 import com.Pirk.Pirk.repositories.CartItemRepository;
 import com.Pirk.Pirk.repositories.CartRepository;
+import com.Pirk.Pirk.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +17,13 @@ public class CartItemService {
 
     private final CartItemRepository cartItemRepository;
     private final CartRepository cartRepository;
+    private final ProductRepository productRepository;
 
     @Autowired
-    public CartItemService(CartItemRepository cartItemRepository, CartRepository cartRepository) {
+    public CartItemService(CartItemRepository cartItemRepository, CartRepository cartRepository, ProductRepository productRepository) {
         this.cartItemRepository = cartItemRepository;
         this.cartRepository = cartRepository;
+        this.productRepository = productRepository;
     }
 
     // Add a new cart item or update it if it already exists
@@ -41,8 +45,23 @@ public class CartItemService {
     public CartItem addItemToCart(Long cartId, CartItem cartItem) {
         Cart cart = cartRepository.findById(cartId)
                 .orElseThrow(() -> new RuntimeException("Cart not found"));
-        cartItem.setCart(cart);
-        return cartItemRepository.save(cartItem);
+        
+        // Get the product from the database
+        Product product = productRepository.findById(cartItem.getProduct().getId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+        
+        // Create a new cart item with the product
+        CartItem newCartItem = new CartItem();
+        newCartItem.setProduct(product);
+        newCartItem.setQuantity(cartItem.getQuantity());
+        newCartItem.setPrice(product.getPrice());
+        newCartItem.setCart(cart);
+        
+        // Update cart's total price
+        cart.setTotalPrice(cart.getTotalPrice() + (product.getPrice().doubleValue() * cartItem.getQuantity()));
+        cartRepository.save(cart);
+        
+        return cartItemRepository.save(newCartItem);
     }
 
     public CartItem updateCartItem(Long itemId, CartItem updatedItem) {

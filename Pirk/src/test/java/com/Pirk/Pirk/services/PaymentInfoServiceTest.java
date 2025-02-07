@@ -3,6 +3,7 @@ package com.Pirk.Pirk.services;
 import com.Pirk.Pirk.models.Order;
 import com.Pirk.Pirk.models.PaymentInfo;
 import com.Pirk.Pirk.models.PaymentRequest;
+import com.Pirk.Pirk.repositories.OrderRepository;
 import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,84 +28,135 @@ class PaymentInfoServiceTest {
     @Mock
     private PaymentInfoRepository paymentInfoRepository;
 
+    @Mock
+    private OrderRepository orderRepository;
+
     @InjectMocks
     private PaymentInfoService paymentInfoService;
 
-    private PaymentInfo paymentInfo1;
-    private PaymentInfo paymentInfo2;
-    private Long orderId;
+    private PaymentRequest validPaymentRequest;
+    private Order testOrder;
+    private PaymentInfo testPaymentInfo;
+    private static final Long ORDER_ID = 1L;
+    private static final Long BUYER_ID = 1L;
 
     @BeforeEach
     void setUp() {
-        orderId = 1L;
-        paymentInfo1 = new PaymentInfo();
-        Order order1 = new Order();
-        order1.setId(orderId);
-        paymentInfo1.setOrder(order1);
+        // Create a valid payment request
+        String expDate = YearMonth.now().plusMonths(1).format(DateTimeFormatter.ofPattern("MM/yy"));
+        validPaymentRequest = new PaymentRequest(
+            "John Doe",
+            "4532015112830366", // Valid card number that passes Luhn algorithm
+            expDate,
+            "123",
+            ORDER_ID
+        );
+        validPaymentRequest.setBuyerId(BUYER_ID);
 
-        paymentInfo2 = new PaymentInfo();
-        Order order2 = new Order();
-        order2.setId(orderId);
-        paymentInfo2.setOrder(order2);
+        // Set up test order
+        testOrder = new Order();
+        testOrder.setId(ORDER_ID);
+
+        // Set up test payment info
+        testPaymentInfo = new PaymentInfo();
+        testPaymentInfo.setPaymentStatus("COMPLETED");
+        testPaymentInfo.setOrder(testOrder);
+        testPaymentInfo.setBuyerId(BUYER_ID);
     }
 
     @Test
-    void testGetPaymentInfoByOrderId() {
+    void whenProcessPaymentWithValidCard_thenSuccess() {
         // Arrange
-        when(paymentInfoRepository.findByOrderId(orderId)).thenReturn(List.of(paymentInfo1, paymentInfo2));
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(testOrder));
+        when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(testPaymentInfo);
 
         // Act
-        List<PaymentInfo> result = paymentInfoService.getPaymentInfoByOrderId(orderId);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(2, result.size());
-        assertEquals(orderId, result.get(0).getOrder().getId());
-        assertEquals(orderId, result.get(1).getOrder().getId());
-    }
-
-    @Test
-    void testGetPaymentInfoById() {
-        // Arrange
-        when(paymentInfoRepository.findById(orderId)).thenReturn(Optional.of(paymentInfo1));
-
-        // Act
-        Optional<PaymentInfo> result = paymentInfoService.getPaymentInfo(orderId);
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(paymentInfo1, result.get());
-    }
-
-    @Test
-    void testProcessPayment_Declined() {
-        // Arrange
-        PaymentRequest paymentRequest = new PaymentRequest("John Doe", "4111111111111111", "12/25", "123", orderId);
-        
-        // Act & Assert
-        PaymentDeclinedException exception = assertThrows(PaymentDeclinedException.class, () -> {
-            paymentInfoService.processPayment(paymentRequest);
-        });
-
-        assertEquals("Payment was declined. Please check your card details and try again.", exception.getMessage());
-        verify(paymentInfoRepository, never()).save(any(PaymentInfo.class));
-    }
-
-    @Test
-    void testProcessPayment_Approved() {
-        // Arrange
-        PaymentRequest paymentRequest = new PaymentRequest("John Doe", "4111111111111112", "12/25", "123", orderId);
-        PaymentInfo savedPaymentInfo = new PaymentInfo();
-        savedPaymentInfo.setPaymentStatus("COMPLETED");
-        
-        when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(savedPaymentInfo);
-
-        // Act
-        PaymentInfo result = paymentInfoService.processPayment(paymentRequest);
+        PaymentInfo result = paymentInfoService.processPayment(validPaymentRequest);
 
         // Assert
         assertNotNull(result);
         assertEquals("COMPLETED", result.getPaymentStatus());
         verify(paymentInfoRepository).save(any(PaymentInfo.class));
+        verify(orderRepository).findById(ORDER_ID);
+    }
+
+    @Test
+    void whenProcessPaymentWithInvalidCard_thenThrowException() {
+        // Arrange
+        validPaymentRequest.setCardNumber("1234567890123"); // Invalid card number
+
+        // Act & Assert
+        assertThrows(PaymentDeclinedException.class, () -> {
+            paymentInfoService.processPayment(validPaymentRequest);
+        });
+
+        verify(paymentInfoRepository, never()).save(any(PaymentInfo.class));
+    }
+
+    @Test
+    void whenProcessPaymentWithExpiredCard_thenThrowException() {
+        // Arrange
+        validPaymentRequest.setExpirationDate("01/20"); // Expired date
+
+        // Act & Assert
+        assertThrows(PaymentDeclinedException.class, () -> {
+            paymentInfoService.processPayment(validPaymentRequest);
+        });
+
+        verify(paymentInfoRepository, never()).save(any(PaymentInfo.class));
+    }
+
+    @Test
+    void whenProcessPaymentWithInvalidCVV_thenThrowException() {
+        // Arrange
+        validPaymentRequest.setCvv("12"); // Invalid CVV (too short)
+
+        // Act & Assert
+        assertThrows(PaymentDeclinedException.class, () -> {
+            paymentInfoService.processPayment(validPaymentRequest);
+        });
+
+        verify(paymentInfoRepository, never()).save(any(PaymentInfo.class));
+    }
+
+    @Test
+    void whenOrderNotFound_thenThrowException() {
+        // Arrange
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            paymentInfoService.processPayment(validPaymentRequest);
+        });
+
+        verify(paymentInfoRepository, never()).save(any(PaymentInfo.class));
+    }
+
+    @Test
+    void whenGetPaymentInfoByOrderId_thenSuccess() {
+        // Arrange
+        List<PaymentInfo> expectedPayments = List.of(testPaymentInfo);
+        when(paymentInfoRepository.findByOrderId(ORDER_ID)).thenReturn(expectedPayments);
+
+        // Act
+        List<PaymentInfo> result = paymentInfoService.getPaymentInfoByOrderId(ORDER_ID);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(testPaymentInfo, result.get(0));
+    }
+
+    @Test
+    void whenGetPaymentInfoById_thenSuccess() {
+        // Arrange
+        when(paymentInfoRepository.findById(1L)).thenReturn(Optional.of(testPaymentInfo));
+
+        // Act
+        Optional<PaymentInfo> result = paymentInfoService.getPaymentInfo(1L);
+
+        // Assert
+        assertTrue(result.isPresent());
+        assertEquals(testPaymentInfo, result.get());
     }
 }
