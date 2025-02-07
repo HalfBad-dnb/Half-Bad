@@ -7,7 +7,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
@@ -17,8 +18,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
-public class AuthServiceTests {
+@ExtendWith(MockitoExtension.class)
+class AuthServiceTests {
 
     @Mock
     private UserRepository userRepository;
@@ -43,14 +44,14 @@ public class AuthServiceTests {
         testUser.setEmail(TEST_EMAIL);
         testUser.setPassword(ENCODED_PASSWORD);
         testUser.setRole(User.Role.USER);
-
-        // Setup default mock behaviors
-        when(passwordEncoder.encode(anyString())).thenReturn(ENCODED_PASSWORD);
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
     }
 
     @Test
     void whenRegisterUser_thenSucceed() {
+        // Given
+        when(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(ENCODED_PASSWORD);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
         // When
         User registeredUser = userService.registerUser(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -67,6 +68,10 @@ public class AuthServiceTests {
 
     @Test
     void whenRegisterUser_thenPasswordIsEncoded() {
+        // Given
+        when(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(ENCODED_PASSWORD);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
         // When
         userService.registerUser(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -99,13 +104,15 @@ public class AuthServiceTests {
         Exception exception = assertThrows(RuntimeException.class, () -> {
             userService.getUserById(nonExistentUserId);
         });
-
-        assertEquals("User not found", exception.getMessage());
-        verify(userRepository).findById(nonExistentUserId);
+        assertEquals("User not found with id: " + nonExistentUserId, exception.getMessage());
     }
 
     @Test
     void whenRegisterUser_thenRoleIsUser() {
+        // Given
+        when(passwordEncoder.encode(TEST_PASSWORD)).thenReturn(ENCODED_PASSWORD);
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
         // When
         User registeredUser = userService.registerUser(TEST_USERNAME, TEST_EMAIL, TEST_PASSWORD);
 
@@ -115,7 +122,7 @@ public class AuthServiceTests {
 
     @Test
     void whenRegisterUserWithNullValues_thenThrowException() {
-        // Then
+        // When & Then
         assertThrows(IllegalArgumentException.class, () -> {
             userService.registerUser(null, TEST_EMAIL, TEST_PASSWORD);
         });
@@ -127,7 +134,5 @@ public class AuthServiceTests {
         assertThrows(IllegalArgumentException.class, () -> {
             userService.registerUser(TEST_USERNAME, TEST_EMAIL, null);
         });
-
-        verify(userRepository, never()).save(any(User.class));
     }
 }

@@ -1,18 +1,16 @@
 package com.Pirk.Pirk.controllers;
 
-import com.Pirk.Pirk.models.Checkout;
-import com.Pirk.Pirk.models.ErrorResponse;
-import com.Pirk.Pirk.models.Order;
-import com.Pirk.Pirk.models.PaymentInfo;
-import com.Pirk.Pirk.models.PaymentRequest;
-import com.Pirk.Pirk.models.ShippingInfo;
+import com.Pirk.Pirk.models.*;
 import com.Pirk.Pirk.services.CheckoutService;
 import com.Pirk.Pirk.services.OrderService;
 import com.Pirk.Pirk.services.PaymentInfoService;
+import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.ArrayList;
 import java.math.BigDecimal;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/checkout")
@@ -31,20 +29,67 @@ public class CheckoutController {
     }
 
     @PostMapping
-    public ResponseEntity<Checkout> createCheckout(@RequestBody Checkout checkout) {
-        return ResponseEntity.ok(checkoutService.createCheckout(checkout));
+    public ResponseEntity<?> createCheckout(@RequestBody Checkout checkout) {
+        try {
+            Checkout createdCheckout = checkoutService.createCheckout(checkout);
+            return ResponseEntity.ok()
+                .body(Map.of(
+                    "status", "success",
+                    "message", "Checkout created successfully",
+                    "checkout", createdCheckout
+                ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Invalid checkout data: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to create checkout: " + e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Checkout> getCheckout(@PathVariable Long id) {
-        return ResponseEntity.ok(checkoutService.getCheckoutById(id));
+    public ResponseEntity<?> getCheckout(@PathVariable Long id) {
+        try {
+            Checkout checkout = checkoutService.getCheckoutById(id);
+            if (checkout == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Checkout not found with ID: " + id));
+            }
+            return ResponseEntity.ok()
+                .body(Map.of(
+                    "status", "success",
+                    "checkout", checkout
+                ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to retrieve checkout: " + e.getMessage()));
+        }
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<Checkout> updateCheckoutStatus(
+    public ResponseEntity<?> updateCheckoutStatus(
             @PathVariable Long id,
             @RequestParam String status) {
-        return ResponseEntity.ok(checkoutService.updateCheckoutStatus(id, status));
+        try {
+            Checkout checkout = checkoutService.getCheckoutById(id);
+            if (checkout == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Checkout not found with ID: " + id));
+            }
+            Checkout updatedCheckout = checkoutService.updateCheckoutStatus(id, status);
+            return ResponseEntity.ok()
+                .body(Map.of(
+                    "status", "success",
+                    "message", "Checkout status updated successfully",
+                    "checkout", updatedCheckout
+                ));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Invalid status: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse("Failed to update checkout status: " + e.getMessage()));
+        }
     }
 
     @PostMapping("/{id}/payment")
@@ -55,26 +100,27 @@ public class CheckoutController {
             // Get the checkout
             Checkout checkout = checkoutService.getCheckoutById(id);
             if (checkout == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(new ErrorResponse("Checkout not found with ID: " + id));
+            }
+
+            // Validate checkout state
+            if (checkout.getCart() == null || checkout.getCart().getCartItems() == null || checkout.getCart().getCartItems().isEmpty()) {
                 return ResponseEntity.badRequest()
-                    .body(new ErrorResponse("Checkout not found"));
+                    .body(new ErrorResponse("Cart is empty"));
             }
 
             // Set the buyer ID in the payment request
             request.setBuyerId(checkout.getUser().getId());
+            request.setOrderId(id); // Set checkout ID as order ID
             
-            // Create order first
+            // Create order
             Order order = new Order();
             order.setUsername(checkout.getUser().getUsername());
             order.setUserId(checkout.getUser().getId());
+            order.setCartItems(new ArrayList<>(checkout.getCart().getCartItems()));
             
-            // Set cart items
-            if (checkout.getCart() != null && checkout.getCart().getCartItems() != null) {
-                order.setCartItems(new ArrayList<>(checkout.getCart().getCartItems()));
-            } else {
-                throw new IllegalStateException("Cart or cart items cannot be null");
-            }
-            
-            // Create shipping info from shipping address
+            // Create shipping info
             ShippingInfo shippingInfo = ShippingInfo.builder()
                 .recipientName(checkout.getUser().getFirstName() + " " + checkout.getUser().getLastName())
                 .streetAddress(checkout.getShippingAddress().getStreetAddress())
@@ -85,13 +131,12 @@ public class CheckoutController {
                 .phoneNumber(checkout.getShippingAddress().getPhoneNumber())
                 .build();
             order.setShippingInfo(shippingInfo);
-            
             order.setTotalAmount(BigDecimal.valueOf(checkout.getTotalAmount()));
             
-            // Save the order first
+            // Save order
             Order savedOrder = orderService.createOrder(order);
             
-            // Process the payment
+            // Process payment
             PaymentInfo processedPayment = paymentInfoService.processPayment(request);
             
             // Update order with payment info
@@ -102,9 +147,20 @@ public class CheckoutController {
             checkout.setPaymentStatus("PAID");
             checkoutService.updateCheckout(checkout);
             
-            return ResponseEntity.ok(savedOrder);
-        } catch (Exception e) {
+            return ResponseEntity.ok()
+                .body(Map.of(
+                    "status", "success",
+                    "message", "Payment processed and order created successfully",
+                    "order", savedOrder
+                ));
+        } catch (PaymentDeclinedException e) {
+            return ResponseEntity.status(HttpStatus.PAYMENT_REQUIRED)
+                .body(new ErrorResponse(e.getMessage()));
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest()
+                .body(new ErrorResponse("Invalid payment details: " + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse("Failed to process payment: " + e.getMessage()));
         }
     }

@@ -43,7 +43,7 @@ public class UserService {
       throw new IllegalArgumentException("User ID cannot be null");
     }
     return userRepository.findById(userId)
-            .orElseThrow(() -> new RuntimeException("User not found"));
+            .orElseThrow(() -> new RuntimeException("User not found with id: " + userId));
   }
 
   public User getUserByUsername(String username) {

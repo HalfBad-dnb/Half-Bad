@@ -91,7 +91,7 @@ public class CheckoutServiceTest {
         assertEquals(testCart, result.getCart());
         assertEquals(100.0, result.getTotalAmount());
         assertEquals("Credit Card", result.getPaymentMethod());
-        assertEquals("123 Test St", result.getShippingAddress());
+        assertEquals("123 Test St", result.getShippingAddress().getStreetAddress());
         assertEquals("Pending", result.getOrderStatus());
         assertEquals("Pending", result.getPaymentStatus());
         
