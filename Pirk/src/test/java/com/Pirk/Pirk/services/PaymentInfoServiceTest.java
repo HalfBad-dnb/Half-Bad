@@ -46,14 +46,14 @@ class PaymentInfoServiceTest {
     void setUp() {
         // Create a valid payment request
         String expDate = YearMonth.now().plusMonths(1).format(DateTimeFormatter.ofPattern("MM/yy"));
-        validPaymentRequest = new PaymentRequest(
-            "John Doe",
-            "4532015112830366", // Valid card number that passes Luhn algorithm
-            expDate,
-            "123",
-            ORDER_ID,
-            ORDER_AMOUNT
-        );
+        validPaymentRequest = PaymentRequest.builder()
+            
+            .cardNumber("4532015112830366") // Valid card number that passes Luhn algorithm
+            .expirationDate(expDate)
+            .cvv("123")
+            .orderId(ORDER_ID)
+            .amount(ORDER_AMOUNT)
+            .build();
         validPaymentRequest.setBuyerId(BUYER_ID);
 
         // Set up test order

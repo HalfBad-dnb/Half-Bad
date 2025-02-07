@@ -10,7 +10,6 @@ const PaymentPage = () => {
     cardNumber: '',
     expirationDate: '',
     cvv: '',
-    cardholderName: ''
   });
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -68,36 +67,24 @@ const PaymentPage = () => {
     return '';
   };
 
-  const validateCardholderName = (name) => {
-    if (!/^[a-zA-Z\s]{2,50}$/.test(name)) {
-      return 'Please enter a valid cardholder name';
-    }
-    return '';
-  };
-
+ 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
 
     if (name === 'cardNumber') {
-      // Format card number with spaces every 4 digits
       formattedValue = value
         .replace(/\D/g, '')
         .replace(/(\d{4})(?=\d)/g, '$1 ')
         .trim()
         .slice(0, 19);
     } else if (name === 'expirationDate') {
-      // Format expiration date as MM/YY
       formattedValue = value
         .replace(/\D/g, '')
         .replace(/^(\d{2})/, '$1/')
         .slice(0, 5);
     } else if (name === 'cvv') {
-      // Only allow numbers for CVV
       formattedValue = value.replace(/\D/g, '').slice(0, 4);
-    } else if (name === 'cardholderName') {
-      // Only allow letters and spaces for cardholder name
-      formattedValue = value.replace(/[^a-zA-Z\s]/g, '');
     }
 
     setPaymentInfo(prev => ({
@@ -105,7 +92,6 @@ const PaymentPage = () => {
       [name]: formattedValue
     }));
 
-    // Clear error for this field
     setFormErrors(prev => ({
       ...prev,
       [name]: ''
@@ -117,11 +103,6 @@ const PaymentPage = () => {
     let error = '';
 
     switch (name) {
-      case 'cardholderName':
-        if (!value.trim()) {
-          error = 'Please enter a valid cardholder name';
-        }
-        break;
       case 'cardNumber':
         if (!value.trim()) {
           error = 'Card number is required';
@@ -165,17 +146,14 @@ const PaymentPage = () => {
   const handlePaymentSubmit = async (e) => {
     e.preventDefault();
     
-    // Prevent double submission
     if (isSubmitting) return;
 
-    const { cardNumber, expirationDate, cvv, cardholderName } = paymentInfo;
+    const { cardNumber, expirationDate, cvv } = paymentInfo;
     
-    // Validate all fields
     const errors = {
       cardNumber: validateCardNumber(cardNumber),
       expirationDate: validateExpirationDate(expirationDate),
       cvv: validateCVV(cvv),
-      cardholderName: validateCardholderName(cardholderName)
     };
 
     if (Object.values(errors).some(error => error)) {
@@ -198,8 +176,6 @@ const PaymentPage = () => {
       const cleanCardNumber = cardNumber.replace(/\s/g, '');
       const last4 = cleanCardNumber.slice(-4);
       
-      console.log('Processing payment for order:', orderId);
-      
       try {
         const response = await fetch('http://localhost:8081/api/payments', {
           method: 'POST',
@@ -213,7 +189,7 @@ const PaymentPage = () => {
             cvv,
             orderId: parseInt(orderId, 10),
             buyerId: parseInt(userId, 10),
-            cardholderName: cardholderName.trim(),
+            last4,
             amount: orderTotal
           })
         });
@@ -221,15 +197,14 @@ const PaymentPage = () => {
         const data = await response.json();
         
         if (!response.ok) {
-          // Handle specific error cases
           switch (response.status) {
-            case 402: // Payment Required - usually for payment validation failures
+            case 402:
               throw new Error(data.message || 'Payment validation failed');
-            case 409: // Conflict - for duplicate payments
+            case 409:
               throw new Error('This order has already been paid for');
-            case 400: // Bad Request
+            case 400:
               throw new Error(data.message || 'Invalid payment details');
-            case 401: // Unauthorized
+            case 401:
               sessionStorage.clear();
               navigate('/login', { state: { returnUrl: '/payment' } });
               throw new Error('Session expired. Please login again.');
@@ -238,24 +213,18 @@ const PaymentPage = () => {
           }
         }
 
-        console.log('Payment response:', data);
-        
         if (data.status === 'success' && data.paymentInfo.paymentStatus === 'COMPLETED') {
-          // Clear sensitive data
           setPaymentInfo({
             cardNumber: '',
             expirationDate: '',
             cvv: '',
-            cardholderName: ''
           });
           
-          // Clear cart and session data
           clearCart();
           sessionStorage.removeItem('cart');
           sessionStorage.removeItem('orderId');
           sessionStorage.removeItem('orderTotal');
           
-          // Navigate to confirmation page
           navigate('/order-confirmation', { 
             state: { 
               orderId: orderId,
@@ -267,7 +236,6 @@ const PaymentPage = () => {
           throw new Error(data.message || 'Payment was not completed successfully');
         }
       } catch (error) {
-        // If it's a network error, show a more user-friendly message
         if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
           throw new Error('Unable to connect to payment service. Please try again later.');
         }
@@ -279,27 +247,6 @@ const PaymentPage = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const luhnCheck = (cardNumber) => {
-    let sum = 0;
-    let isEven = false;
-    
-    for (let i = cardNumber.length - 1; i >= 0; i--) {
-      let digit = parseInt(cardNumber.charAt(i));
-
-      if (isEven) {
-        digit *= 2;
-        if (digit > 9) {
-          digit -= 9;
-        }
-      }
-
-      sum += digit;
-      isEven = !isEven;
-    }
-
-    return sum % 10 === 0;
   };
 
   return (
@@ -317,28 +264,6 @@ const PaymentPage = () => {
           <div className="mb-6 text-center">
             <h2 className="text-xl font-semibold text-yellow-500">Order Total</h2>
             <p className="text-2xl font-bold text-white">${orderTotal.toFixed(2)}</p>
-          </div>
-          
-          <div className="space-y-2">
-            <label htmlFor="cardholderName" className="block text-sm font-medium text-gray-300">
-              Cardholder Name
-            </label>
-            <input
-              id="cardholderName"
-              type="text"
-              name="cardholderName"
-              value={paymentInfo.cardholderName}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              placeholder="John Doe"
-              className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                formErrors.cardholderName ? 'border-red-500' : ''
-              }`}
-              autoComplete="cc-name"
-            />
-            {formErrors.cardholderName && (
-              <p className="text-red-500 text-sm mt-1">{formErrors.cardholderName}</p>
-            )}
           </div>
 
           <div className="space-y-2">
@@ -366,7 +291,7 @@ const PaymentPage = () => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-300">
-                Expiration Date
+                Expiration Date (MM/YY)
               </label>
               <input
                 id="expirationDate"
@@ -392,7 +317,7 @@ const PaymentPage = () => {
               </label>
               <input
                 id="cvv"
-                type="password"
+                type="text"
                 name="cvv"
                 value={paymentInfo.cvv}
                 onChange={handleInputChange}
@@ -409,19 +334,16 @@ const PaymentPage = () => {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className={`w-full py-3 px-4 bg-yellow-500 text-black rounded-lg font-semibold transition-all
-              ${isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-yellow-400'}`}
-          >
-            {isSubmitting ? 'Processing...' : 'Pay Securely'}
-          </button>
+          <div className="mt-6 text-center">
+            <button
+              type="submit"
+              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-opacity-50"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Processing...' : 'Complete Payment'}
+            </button>
+          </div>
         </form>
-
-        <div className="mt-6 text-center text-sm text-gray-400">
-          <p>Your payment information is encrypted and secure</p>
-        </div>
       </div>
     </div>
   );

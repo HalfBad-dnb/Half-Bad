@@ -14,15 +14,14 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "payment_info")
 public class PaymentInfo {
+    
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "cardholder_name", nullable = false)
-    private String cardholderName;
 
     @Column(name = "last_four_digits", length = 4)
-    private String lastFourDigits;
+    private String lastFourDigits; // Set during payment processing
 
     @Column(name = "order_id", nullable = false, insertable = false, updatable = false)
     private Long orderId;
@@ -59,12 +58,14 @@ public class PaymentInfo {
     @Column(name = "amount", nullable = false)
     private BigDecimal amount;
 
+    // Ensures all required fields are populated before persisting the entity
     @PrePersist
     protected void onCreate() {
         Date now = new Date();
         paymentDate = now;
         createdAt = now;
         updatedAt = now;
+
         if (paymentStatus == null) {
             paymentStatus = "PENDING";
         }
@@ -73,8 +74,22 @@ public class PaymentInfo {
         }
     }
 
+    // Ensures updated_at is set during updates
     @PreUpdate
     protected void onUpdate() {
         updatedAt = new Date();
+    }
+
+    // Method to initialize the entity from a request object (e.g., payment processing request)
+    public void initializeFromRequest(PaymentRequest paymentRequest, Order order) {
+     
+        this.lastFourDigits = paymentRequest.getLastFourDigits();
+        this.paymentMethod = paymentRequest.getPaymentMethod();
+        this.amount = paymentRequest.getAmount();
+        this.paymentStatus = "PENDING"; // Set the initial payment status
+        this.status = "PENDING"; // Set the initial status
+        this.buyerId = paymentRequest.getBuyerId();
+        this.order = order; // Set the associated order
+        this.orderId = order.getId(); // Set the order ID
     }
 }

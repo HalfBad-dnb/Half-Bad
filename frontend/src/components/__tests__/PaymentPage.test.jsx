@@ -54,23 +54,6 @@ describe('PaymentPage', () => {
         return storage[key];
       });
   });
-
-  describe('Input Validation', () => {
-    test('validates cardholder name', async () => {
-      renderPaymentPage();
-      
-      const nameInput = screen.getByPlaceholderText(/John Doe/i);
-      fireEvent.change(nameInput, { target: { value: '123' } });
-      fireEvent.blur(nameInput);
-      
-      expect(await screen.findByText(/Please enter a valid cardholder name/i)).toBeInTheDocument();
-      
-      fireEvent.change(nameInput, { target: { value: 'John Doe' } });
-      fireEvent.blur(nameInput);
-      
-      expect(screen.queryByText(/Please enter a valid cardholder name/i)).not.toBeInTheDocument();
-    });
-
     test('validates card number with Luhn algorithm', async () => {
       renderPaymentPage();
       
@@ -231,4 +214,4 @@ describe('PaymentPage', () => {
       });
     });
   });
-});
+
