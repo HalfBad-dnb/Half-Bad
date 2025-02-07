@@ -1,6 +1,7 @@
 package com.Pirk.Pirk.models;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,15 +20,16 @@ public class Cart {
     @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CartItem> cartItems;
 
-    private double totalPrice;
+    @Column(name = "total_price", precision = 10, scale = 2)
+    private BigDecimal totalPrice;
 
     public Cart() {
         this.cartItems = new ArrayList<>();
-        this.totalPrice = 0.0;
+        this.totalPrice = BigDecimal.ZERO;
     }
 
     // Add product to the cart
-    public void addItem(Product product, int quantity, double price) {
+    public void addItem(Product product, int quantity, BigDecimal price) {
         CartItem existingItem = findCartItem(product.getId());
 
         if (existingItem != null) {
@@ -38,11 +40,11 @@ public class Cart {
             CartItem newItem = new CartItem(product, quantity, price, this);
             cartItems.add(newItem);
         }
-        updateTotalPrice(price * quantity);
+        updateTotalPrice(price.multiply(BigDecimal.valueOf(quantity)));
     }
 
     // Remove product from the cart
-    public void removeItem(Long productId, int quantity, double price) {
+    public void removeItem(Long productId, int quantity, BigDecimal price) {
         CartItem itemToRemove = findCartItem(productId);
 
         if (itemToRemove != null) {
@@ -52,13 +54,13 @@ public class Cart {
             } else {
                 itemToRemove.setQuantity(currentQuantity - quantity);  // Decrease the quantity
             }
-            updateTotalPrice(-price * quantity);
+            updateTotalPrice(price.multiply(BigDecimal.valueOf(quantity)).negate());
         }
     }
 
     // Update total price of the cart
-    private void updateTotalPrice(double amount) {
-        totalPrice += amount;
+    private void updateTotalPrice(BigDecimal amount) {
+        totalPrice = totalPrice.add(amount);
     }
 
     // Find CartItem by productId
@@ -72,12 +74,12 @@ public class Cart {
     }
 
     // Getter for totalPrice
-    public double getTotalPrice() {
+    public BigDecimal getTotalPrice() {
         return totalPrice;
     }
 
     // Setter for totalPrice
-    public void setTotalPrice(double totalPrice) {
+    public void setTotalPrice(BigDecimal totalPrice) {
         this.totalPrice = totalPrice;
     }
 
@@ -98,7 +100,7 @@ public class Cart {
     // Clear cart
     public void clearCart() {
         cartItems.clear();
-        totalPrice = 0.0;
+        totalPrice = BigDecimal.ZERO;
     }
 
     public Long getId() {

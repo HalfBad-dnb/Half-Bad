@@ -4,6 +4,7 @@ import java.util.List;
 
 public class OrderRequest {
 
+    private String username; // ✅ Added username to match ShippingInfo
     private String orderNumber;
     private String orderDate;
     private double totalAmount;
@@ -12,6 +13,14 @@ public class OrderRequest {
     private List<CartItem> cartItems; // Assuming CartItem is a defined class
 
     // Getters and Setters
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
     public String getOrderNumber() {
         return orderNumber;
     }

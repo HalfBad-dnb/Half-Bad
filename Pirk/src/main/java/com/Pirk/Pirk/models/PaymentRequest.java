@@ -1,5 +1,7 @@
 package com.Pirk.Pirk.models;
 
+import java.math.BigDecimal;
+
 public class PaymentRequest {
     private String cardHolderName;
     private String cardNumber;
@@ -7,17 +9,19 @@ public class PaymentRequest {
     private String cvv;
     private Long orderId;
     private Long buyerId;
+    private BigDecimal amount;
 
     // Default constructor
     public PaymentRequest() {
     }
 
-    public PaymentRequest(String cardHolderName, String cardNumber, String expirationDate, String cvv, Long orderId) {
+    public PaymentRequest(String cardHolderName, String cardNumber, String expirationDate, String cvv, Long orderId, BigDecimal amount) {
         this.cardHolderName = cardHolderName;
         this.cardNumber = cardNumber;
         this.expirationDate = expirationDate;
         this.cvv = cvv;
         this.orderId = orderId;
+        this.amount = amount;
     }
 
     // Getters and setters for each field
@@ -67,5 +71,13 @@ public class PaymentRequest {
 
     public void setBuyerId(Long buyerId) {
         this.buyerId = buyerId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
     }
 }

@@ -4,10 +4,10 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
+import java.math.BigDecimal;
 
 @Data
 @Builder
-
 @AllArgsConstructor
 @Entity
 @Table(name = "checkouts")
@@ -24,7 +24,8 @@ public class Checkout {
     @JoinColumn(name = "cart_id", nullable = false)
     private Cart cart;
 
-    private double totalAmount;
+    @Column(name = "total_amount", precision = 10, scale = 2)
+    private BigDecimal totalAmount;
     
     @Column(name = "payment_method")
     private String paymentMethod;
@@ -45,6 +46,7 @@ public class Checkout {
 
     // Default constructor
     public Checkout() {
+        this.totalAmount = BigDecimal.ZERO;
     }
 
     // Getter and Setter for id
@@ -75,11 +77,11 @@ public class Checkout {
     }
 
     // Getter and Setter for totalAmount
-    public double getTotalAmount() {
+    public BigDecimal getTotalAmount() {
         return totalAmount;
     }
 
-    public void setTotalAmount(double totalAmount) {
+    public void setTotalAmount(BigDecimal totalAmount) {
         this.totalAmount = totalAmount;
     }
 

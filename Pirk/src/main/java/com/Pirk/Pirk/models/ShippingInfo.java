@@ -18,11 +18,11 @@ public class ShippingInfo {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "recipient_name", nullable = false)
-    private String recipientName;
+    @Column(name = "user_name", nullable = false)
+    private String username;
     
-    @Column(name = "street_address", nullable = false)
-    private String streetAddress;
+    @Column(name = "address", nullable = false)
+    private String address;
 
     @Column(nullable = false)
     private String city;
@@ -41,8 +41,8 @@ public class ShippingInfo {
     // Get full address as a concatenated string
     public String getAddress() {
         return String.format("%s, %s, %s, %s %s, %s",
-            recipientName,
-            streetAddress,
+            username, // ✅ Fix: Changed `userName` to `username`
+            address,
             city,
             state != null ? state + "," : "",
             postalCode,

@@ -113,6 +113,7 @@ public class CheckoutController {
             // Set the buyer ID in the payment request
             request.setBuyerId(checkout.getUser().getId());
             request.setOrderId(id); // Set checkout ID as order ID
+            request.setAmount(checkout.getTotalAmount()); // Set amount from checkout
             
             // Create order
             Order order = new Order();
@@ -122,8 +123,8 @@ public class CheckoutController {
             
             // Create shipping info
             ShippingInfo shippingInfo = ShippingInfo.builder()
-                .recipientName(checkout.getUser().getFirstName() + " " + checkout.getUser().getLastName())
-                .streetAddress(checkout.getShippingAddress().getStreetAddress())
+                .username(checkout.getUser().getFirstName() + " " + checkout.getUser().getLastName())
+                .address(checkout.getShippingAddress().getStreetAddress())
                 .city(checkout.getShippingAddress().getCity())
                 .state(checkout.getShippingAddress().getState())
                 .postalCode(checkout.getShippingAddress().getPostalCode())
@@ -131,7 +132,7 @@ public class CheckoutController {
                 .phoneNumber(checkout.getShippingAddress().getPhoneNumber())
                 .build();
             order.setShippingInfo(shippingInfo);
-            order.setTotalAmount(BigDecimal.valueOf(checkout.getTotalAmount()));
+            order.setTotalAmount(checkout.getTotalAmount());
             
             // Save order
             Order savedOrder = orderService.createOrder(order);

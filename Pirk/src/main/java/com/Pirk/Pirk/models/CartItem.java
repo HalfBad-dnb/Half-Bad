@@ -32,10 +32,10 @@ public class CartItem {
     public CartItem() {}
 
     // Constructor including Cart
-    public CartItem(Product product, int quantity, double price, Cart cart) {
+    public CartItem(Product product, int quantity, BigDecimal price, Cart cart) {
         this.product = product;
         this.quantity = quantity;
-        this.price = BigDecimal.valueOf(price); // Converting double to BigDecimal for consistency
+        this.price = price;
         this.cart = cart;
     }
 

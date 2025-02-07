@@ -9,6 +9,7 @@ import com.Pirk.Pirk.repositories.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,7 +59,8 @@ public class CartItemService {
         newCartItem.setCart(cart);
         
         // Update cart's total price
-        cart.setTotalPrice(cart.getTotalPrice() + (product.getPrice().doubleValue() * cartItem.getQuantity()));
+        BigDecimal itemTotal = product.getPrice().multiply(BigDecimal.valueOf(cartItem.getQuantity()));
+        cart.setTotalPrice(cart.getTotalPrice().add(itemTotal));
         cartRepository.save(cart);
         
         return cartItemRepository.save(newCartItem);

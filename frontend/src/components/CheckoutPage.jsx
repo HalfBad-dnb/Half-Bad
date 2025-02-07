@@ -20,7 +20,6 @@ const CheckoutPage = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      // Check if user is logged in first
       const token = sessionStorage.getItem('token');
       if (!token) {
         navigate('/login');
@@ -28,7 +27,6 @@ const CheckoutPage = () => {
       }
 
       try {
-        // Get stored user info first
         const storedUsername = sessionStorage.getItem('username');
         const storedEmail = sessionStorage.getItem('email');
 
@@ -41,18 +39,13 @@ const CheckoutPage = () => {
         }
 
         // Verify token by making a request to the user info endpoint
-        const token = sessionStorage.getItem('token');
-        console.log('Using token:', token);
-
         const response = await axios.get('http://localhost:8081/api/user/info', {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
         });
-        console.log('User info response:', response);
-        console.log('User info:', response.data);
-
+        
         // Update shipping info with latest data from server
         if (response.data) {
           setShippingInfo(prevInfo => ({
@@ -66,18 +59,16 @@ const CheckoutPage = () => {
         const errorMessage = err.response?.data?.error || err.response?.data?.message || err.message || 'Failed to verify authentication';
         
         if (err.response?.status === 401 || err.response?.status === 403) {
-          console.log('Token invalid or expired, redirecting to login');
           sessionStorage.removeItem('token');
           navigate('/login', { state: { from: location.pathname } });
         } else {
           setError(errorMessage);
-          console.error('Detailed error:', err.response?.data);
         }
       }
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, location]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -93,29 +84,20 @@ const CheckoutPage = () => {
     setError(null);
 
     try {
-      console.log('Starting checkout process...');
-
-      // Get current user info
-      console.log('Fetching user info...');
       const token = sessionStorage.getItem('token');
       if (!token) {
         throw new Error('Authentication required');
       }
+
+      // Get user info
       const userResponse = await axios.get('http://localhost:8081/api/user/info', {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
       });
-      console.log('User info received:', userResponse.data);
 
-      // Create order with shipping info and total amount
-      console.log('Creating order...');
-      
-      // Get cart items from session storage
       const cart = JSON.parse(sessionStorage.getItem('cart') || '[]');
-      console.log('Cart from session:', cart);
-      
       if (!cart || cart.length === 0) {
         throw new Error('Your cart is empty');
       }
@@ -124,7 +106,7 @@ const CheckoutPage = () => {
       if (totalAmount <= 0) {
         throw new Error('Invalid order total');
       }
-      
+
       const orderData = {
         shippingInfo: {
           fullName: shippingInfo.fullName,
@@ -135,56 +117,35 @@ const CheckoutPage = () => {
           country: shippingInfo.country
         },
         cartItems: cart.map(item => ({
-          product: {
-            id: item.id
-          },
+          product: { id: item.id },
           quantity: item.quantity,
           price: item.price
         })),
-        totalAmount: totalAmount,
+        totalAmount,
         status: 'PENDING',
         userId: userResponse.data.id
       };
-      
-      console.log('Sending order data:', orderData);
-      
-      const orderResponse = await axios.post(
-        'http://localhost:8081/api/orders',
-        orderData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-        }
-      );
-      
-      console.log('Order creation response:', orderResponse);
-      
+
+      const orderResponse = await axios.post('http://localhost:8081/api/orders', orderData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
       if (!orderResponse.data || !orderResponse.data.id) {
-        throw new Error('Failed to create order: Invalid response from server');
+        throw new Error('Failed to create order');
       }
 
-      // Store necessary data in session storage
       sessionStorage.setItem('shippingInfo', JSON.stringify(shippingInfo));
       sessionStorage.setItem('orderId', orderResponse.data.id);
       sessionStorage.setItem('orderTotal', totalAmount);
       sessionStorage.setItem('userId', userResponse.data.id);
-      console.log('Stored order data in session:', {
-        orderId: orderResponse.data.id,
-        total: totalAmount,
-        userId: userResponse.data.id
-      });
 
-      // Redirect to payment page
-      navigate('/payment', { 
-        state: { 
-          orderId: orderResponse.data.id,
-          total: totalAmount 
-        }
+      navigate('/payment', {
+        state: { orderId: orderResponse.data.id, total: totalAmount }
       });
     } catch (error) {
-      console.error('Checkout error:', error);
       setError(error.response?.data?.message || error.message || 'An error occurred during checkout');
     } finally {
       setIsProcessing(false);
@@ -193,7 +154,6 @@ const CheckoutPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#4B0000] to-[#000000] text-white">
-      {/* Hero Section */}
       <section className="relative text-center py-20">
         <div className="absolute inset-0 bg-black opacity-50"></div>
         <div className="relative z-10">
@@ -202,7 +162,6 @@ const CheckoutPage = () => {
         </div>
       </section>
 
-      {/* Checkout Form */}
       <div className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-black bg-opacity-70 p-8 rounded-lg shadow-xl">
           {error && (

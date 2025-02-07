@@ -9,8 +9,6 @@ import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -99,13 +97,27 @@ public class PaymentInfoService {
         Order order = orderRepository.findById(paymentRequest.getOrderId())
                 .orElseThrow(() -> new RuntimeException("Order not found"));
 
+        // Validate payment amount
+        if (paymentRequest.getAmount() == null || !paymentRequest.getAmount().equals(order.getTotalAmount())) {
+            throw new PaymentDeclinedException("Payment amount does not match order total");
+        }
+
+        // Check for existing completed payment
+        List<PaymentInfo> existingPayments = paymentInfoRepository.findByOrderId(paymentRequest.getOrderId());
+        if (existingPayments.stream().anyMatch(p -> "COMPLETED".equals(p.getPaymentStatus()))) {
+            throw new PaymentDeclinedException("Payment already processed for this order");
+        }
+
         // Create PaymentInfo and set all necessary fields
         PaymentInfo paymentInfo = new PaymentInfo();
         paymentInfo.setPaymentStatus("COMPLETED");
+        paymentInfo.setStatus("COMPLETED");
         paymentInfo.setCardholderName(paymentRequest.getCardHolderName());
         paymentInfo.setLastFourDigits(paymentRequest.getCardNumber().substring(paymentRequest.getCardNumber().length() - 4));
         paymentInfo.setOrder(order);
         paymentInfo.setBuyerId(paymentRequest.getBuyerId());
+        paymentInfo.setPaymentMethod("CREDIT_CARD");
+        paymentInfo.setAmount(paymentRequest.getAmount());
 
         // Save and return the payment info
         return paymentInfoRepository.save(paymentInfo);

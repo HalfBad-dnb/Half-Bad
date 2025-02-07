@@ -70,8 +70,8 @@ CREATE TABLE shipping_addresses (
 -- Create shipping_info table (referenced by orders)
 CREATE TABLE shipping_info (
     id BIGSERIAL PRIMARY KEY,
-    recipient_name VARCHAR(255) NOT NULL,
-    street_address VARCHAR(255) NOT NULL,
+    user_name VARCHAR(255) NOT NULL,
+    address VARCHAR(255) NOT NULL,
     city VARCHAR(100) NOT NULL,
     state VARCHAR(100),
     postal_code VARCHAR(20) NOT NULL,

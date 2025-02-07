@@ -7,6 +7,7 @@ import com.Pirk.Pirk.repositories.CartRepository;
 import com.Pirk.Pirk.repositories.ProductRepository;
 import com.Pirk.Pirk.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
 import java.util.Optional;
 
 @Service
@@ -44,7 +45,7 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        cart.addItem(product, quantity, product.getPrice().doubleValue());
+        cart.addItem(product, quantity, product.getPrice());
         cartRepository.save(cart);
     }
 
@@ -54,7 +55,7 @@ public class CartService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        cart.removeItem(productId, quantity, product.getPrice().doubleValue());
+        cart.removeItem(productId, quantity, product.getPrice());
         cartRepository.save(cart);
     }
 

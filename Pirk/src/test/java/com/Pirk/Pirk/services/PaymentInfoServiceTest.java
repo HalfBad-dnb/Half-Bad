@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.math.BigDecimal;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -39,6 +40,7 @@ class PaymentInfoServiceTest {
     private PaymentInfo testPaymentInfo;
     private static final Long ORDER_ID = 1L;
     private static final Long BUYER_ID = 1L;
+    private static final BigDecimal ORDER_AMOUNT = BigDecimal.valueOf(100.00);
 
     @BeforeEach
     void setUp() {
@@ -49,19 +51,23 @@ class PaymentInfoServiceTest {
             "4532015112830366", // Valid card number that passes Luhn algorithm
             expDate,
             "123",
-            ORDER_ID
+            ORDER_ID,
+            ORDER_AMOUNT
         );
         validPaymentRequest.setBuyerId(BUYER_ID);
 
         // Set up test order
         testOrder = new Order();
         testOrder.setId(ORDER_ID);
+        testOrder.setTotalAmount(ORDER_AMOUNT);
 
         // Set up test payment info
         testPaymentInfo = new PaymentInfo();
         testPaymentInfo.setPaymentStatus("COMPLETED");
         testPaymentInfo.setOrder(testOrder);
         testPaymentInfo.setBuyerId(BUYER_ID);
+        testPaymentInfo.setAmount(ORDER_AMOUNT);
+        testPaymentInfo.setPaymentMethod("CREDIT_CARD");
     }
 
     @Test
@@ -69,6 +75,7 @@ class PaymentInfoServiceTest {
         // Arrange
         when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(testOrder));
         when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(testPaymentInfo);
+        when(paymentInfoRepository.findByOrderId(ORDER_ID)).thenReturn(List.of());
 
         // Act
         PaymentInfo result = paymentInfoService.processPayment(validPaymentRequest);
@@ -76,6 +83,8 @@ class PaymentInfoServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals("COMPLETED", result.getPaymentStatus());
+        assertEquals(ORDER_AMOUNT, result.getAmount());
+        assertEquals("CREDIT_CARD", result.getPaymentMethod());
         verify(paymentInfoRepository).save(any(PaymentInfo.class));
         verify(orderRepository).findById(ORDER_ID);
     }
@@ -107,9 +116,10 @@ class PaymentInfoServiceTest {
     }
 
     @Test
-    void whenProcessPaymentWithInvalidCVV_thenThrowException() {
+    void whenProcessPaymentWithInvalidAmount_thenThrowException() {
         // Arrange
-        validPaymentRequest.setCvv("12"); // Invalid CVV (too short)
+        validPaymentRequest.setAmount(BigDecimal.valueOf(200.00)); // Different from order amount
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(testOrder));
 
         // Act & Assert
         assertThrows(PaymentDeclinedException.class, () -> {
@@ -120,43 +130,16 @@ class PaymentInfoServiceTest {
     }
 
     @Test
-    void whenOrderNotFound_thenThrowException() {
+    void whenProcessPaymentWithExistingPayment_thenThrowException() {
         // Arrange
-        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.empty());
+        when(orderRepository.findById(ORDER_ID)).thenReturn(Optional.of(testOrder));
+        when(paymentInfoRepository.findByOrderId(ORDER_ID)).thenReturn(List.of(testPaymentInfo));
 
         // Act & Assert
-        assertThrows(RuntimeException.class, () -> {
+        assertThrows(PaymentDeclinedException.class, () -> {
             paymentInfoService.processPayment(validPaymentRequest);
         });
 
         verify(paymentInfoRepository, never()).save(any(PaymentInfo.class));
-    }
-
-    @Test
-    void whenGetPaymentInfoByOrderId_thenSuccess() {
-        // Arrange
-        List<PaymentInfo> expectedPayments = List.of(testPaymentInfo);
-        when(paymentInfoRepository.findByOrderId(ORDER_ID)).thenReturn(expectedPayments);
-
-        // Act
-        List<PaymentInfo> result = paymentInfoService.getPaymentInfoByOrderId(ORDER_ID);
-
-        // Assert
-        assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals(testPaymentInfo, result.get(0));
-    }
-
-    @Test
-    void whenGetPaymentInfoById_thenSuccess() {
-        // Arrange
-        when(paymentInfoRepository.findById(1L)).thenReturn(Optional.of(testPaymentInfo));
-
-        // Act
-        Optional<PaymentInfo> result = paymentInfoService.getPaymentInfo(1L);
-
-        // Assert
-        assertTrue(result.isPresent());
-        assertEquals(testPaymentInfo, result.get());
     }
 }

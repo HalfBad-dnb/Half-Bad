@@ -200,62 +200,78 @@ const PaymentPage = () => {
       
       console.log('Processing payment for order:', orderId);
       
-      const response = await fetch('http://localhost:8081/api/payments', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          cardNumber: cleanCardNumber,
-          expirationDate,
-          cvv,
-          orderId: parseInt(orderId, 10),
-          buyerId: parseInt(userId, 10),
-          cardholderName: cardholderName.trim(),
-          amount: orderTotal
-        })
-      });
-
-      if (!response.ok) {
-        let errorMessage = 'Payment failed';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.message || errorMessage;
-          console.error('Payment error response:', errorData);
-        } catch (e) {
-          console.error('Error parsing error response:', e);
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
-      console.log('Payment response:', data);
-      
-      if (data.status === 'success' && data.paymentInfo.paymentStatus === 'COMPLETED') {
-        // Clear sensitive data
-        setPaymentInfo({
-          cardNumber: '',
-          expirationDate: '',
-          cvv: '',
-          cardholderName: ''
+      try {
+        const response = await fetch('http://localhost:8081/api/payments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            cardNumber: cleanCardNumber,
+            expirationDate,
+            cvv,
+            orderId: parseInt(orderId, 10),
+            buyerId: parseInt(userId, 10),
+            cardholderName: cardholderName.trim(),
+            amount: orderTotal
+          })
         });
+
+        const data = await response.json();
         
-        // Clear cart and session data
-        clearCart();
-        sessionStorage.removeItem('cart');
-        sessionStorage.removeItem('orderId');
-        sessionStorage.removeItem('orderTotal');
-        
-        // Navigate to confirmation page
-        navigate('/order-confirmation', { 
-          state: { 
-            orderId: orderId,
-            status: 'success' 
+        if (!response.ok) {
+          // Handle specific error cases
+          switch (response.status) {
+            case 402: // Payment Required - usually for payment validation failures
+              throw new Error(data.message || 'Payment validation failed');
+            case 409: // Conflict - for duplicate payments
+              throw new Error('This order has already been paid for');
+            case 400: // Bad Request
+              throw new Error(data.message || 'Invalid payment details');
+            case 401: // Unauthorized
+              sessionStorage.clear();
+              navigate('/login', { state: { returnUrl: '/payment' } });
+              throw new Error('Session expired. Please login again.');
+            default:
+              throw new Error(data.message || 'Payment processing failed');
           }
-        });
-      } else {
-        throw new Error(data.message || 'Payment was not completed successfully');
+        }
+
+        console.log('Payment response:', data);
+        
+        if (data.status === 'success' && data.paymentInfo.paymentStatus === 'COMPLETED') {
+          // Clear sensitive data
+          setPaymentInfo({
+            cardNumber: '',
+            expirationDate: '',
+            cvv: '',
+            cardholderName: ''
+          });
+          
+          // Clear cart and session data
+          clearCart();
+          sessionStorage.removeItem('cart');
+          sessionStorage.removeItem('orderId');
+          sessionStorage.removeItem('orderTotal');
+          
+          // Navigate to confirmation page
+          navigate('/order-confirmation', { 
+            state: { 
+              orderId: orderId,
+              status: 'success',
+              amount: orderTotal
+            }
+          });
+        } else {
+          throw new Error(data.message || 'Payment was not completed successfully');
+        }
+      } catch (error) {
+        // If it's a network error, show a more user-friendly message
+        if (error.name === 'TypeError' && error.message === 'Failed to fetch') {
+          throw new Error('Unable to connect to payment service. Please try again later.');
+        }
+        throw error;
       }
     } catch (error) {
       console.error('Payment error:', error);

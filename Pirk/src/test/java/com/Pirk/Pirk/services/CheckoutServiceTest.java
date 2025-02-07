@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +30,8 @@ public class CheckoutServiceTest {
     private User testUser;
     private Cart testCart;
     private Checkout testCheckout;
+    private static final BigDecimal TEST_AMOUNT = new BigDecimal("100.00");
+    private static final BigDecimal ZERO_AMOUNT = BigDecimal.ZERO;
 
     @BeforeEach
     void setUp() {
@@ -40,14 +43,14 @@ public class CheckoutServiceTest {
         // Setup test cart
         testCart = new Cart();
         testCart.setId(1L);
-        testCart.setTotalPrice(100.0); // Set a test total price
+        testCart.setTotalPrice(TEST_AMOUNT); // Set a test total price
 
         // Setup test checkout
         testCheckout = new Checkout();
         testCheckout.setId(1L);
         testCheckout.setUser(testUser);
         testCheckout.setCart(testCart);
-        testCheckout.setTotalAmount(100.0);
+        testCheckout.setTotalAmount(TEST_AMOUNT);
         testCheckout.setPaymentMethod("Credit Card");
         ShippingAddress address = ShippingAddress.builder()
             .streetAddress("123 Test St")
@@ -89,7 +92,7 @@ public class CheckoutServiceTest {
         assertNotNull(result);
         assertEquals(testUser, result.getUser());
         assertEquals(testCart, result.getCart());
-        assertEquals(100.0, result.getTotalAmount());
+        assertEquals(TEST_AMOUNT, result.getTotalAmount());
         assertEquals("Credit Card", result.getPaymentMethod());
         assertEquals("123 Test St", result.getShippingAddress().getStreetAddress());
         assertEquals("Pending", result.getOrderStatus());
@@ -161,8 +164,8 @@ public class CheckoutServiceTest {
     @Test
     void whenCreateCheckoutWithZeroAmount_thenSucceed() {
         // Given
-        testCart.setTotalPrice(0.0);
-        testCheckout.setTotalAmount(0.0);
+        testCart.setTotalPrice(ZERO_AMOUNT);
+        testCheckout.setTotalAmount(ZERO_AMOUNT);
         testCheckout.setUser(testUser);
         testCheckout.setCart(testCart);
         testCheckout.setPaymentMethod("Credit Card");
@@ -183,7 +186,7 @@ public class CheckoutServiceTest {
 
         // Then
         assertNotNull(result);
-        assertEquals(0.0, result.getTotalAmount());
+        assertEquals(ZERO_AMOUNT, result.getTotalAmount());
         verify(checkoutRepository).save(any(Checkout.class));
     }
 }
