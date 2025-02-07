@@ -7,10 +7,10 @@ import com.Pirk.Pirk.repositories.PaymentInfoRepository;
 import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -21,21 +21,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 public class PaymentInfoServiceTest {
 
     @Mock
     private PaymentInfoRepository paymentInfoRepository;
 
     @Mock
-    private OrderService orderService;
+    private OrderServiceInterface orderService;
 
     @InjectMocks
     private PaymentInfoService paymentInfoService;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
     }
 
     @Test
@@ -140,8 +139,8 @@ public class PaymentInfoServiceTest {
         request.setOrderId(1L);
         request.setBuyerId(1L);
         request.setCardholderName("John Doe");
-        request.setCardNumber("4111111111111111");
-        request.setExpirationDate("12/25");
+        request.setCardNumber("4111111111111112"); // Card ending in even number (2) for approval
+        request.setExpirationDate("12/25"); // Valid future date
         request.setCvv("123");
 
         PaymentInfo successPayment = new PaymentInfo();
@@ -174,8 +173,8 @@ public class PaymentInfoServiceTest {
         request.setOrderId(1L);
         request.setBuyerId(1L);
         request.setCardholderName("John Doe");
-        request.setCardNumber("4111111111111111");
-        request.setExpirationDate("12/20"); // Expired card
+        request.setCardNumber("4111111111111113"); // Card ending in odd number (3) for decline
+        request.setExpirationDate("12/25"); // Valid future date
         request.setCvv("123");
 
         PaymentInfo failedPayment = new PaymentInfo();
@@ -188,7 +187,7 @@ public class PaymentInfoServiceTest {
         // Mock service and repository behavior
         when(orderService.getOrderById(1L)).thenReturn(testOrder);
         when(paymentInfoRepository.save(any(PaymentInfo.class))).thenReturn(failedPayment);
-
+        
         // Test the service method and expect an exception
         assertThrows(PaymentDeclinedException.class, () -> {
             paymentInfoService.processPayment(request);

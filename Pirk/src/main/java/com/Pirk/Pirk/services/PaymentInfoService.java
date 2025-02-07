@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 public class PaymentInfoService {
 
     private final PaymentInfoRepository paymentInfoRepository;
-    private final OrderService orderService;
+    private final OrderServiceInterface orderService;
     private static final Logger logger = LoggerFactory.getLogger(PaymentInfoService.class);
 
     @Autowired
-    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository, OrderService orderService) {
+    public PaymentInfoService(PaymentInfoRepository paymentInfoRepository, OrderServiceInterface orderService) {
         this.paymentInfoRepository = paymentInfoRepository;
         this.orderService = orderService;
     }
