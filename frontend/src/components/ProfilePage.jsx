@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 function ProfilePage() {
   const [user, setUser] = useState(null);
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState([]); // Initialize as empty array
   const [error, setError] = useState("");
   const [titleVisible, setTitleVisible] = useState(false);
   const [contentVisible, setContentVisible] = useState(false);
@@ -66,9 +66,10 @@ function ProfilePage() {
           },
         });
 
-        if (response.status === 200 && response.data) {
+        if (response.status === 200) {
           console.log("Orders response:", response.data); // Debug log
-          setOrders(response.data);
+          // Ensure orders is always an array
+          setOrders(Array.isArray(response.data) ? response.data : []);
         }
       } catch (err) {
         console.error("Error fetching orders:", err.response?.data || err.message);
@@ -149,7 +150,7 @@ function ProfilePage() {
           <div className="bg-black bg-opacity-80 backdrop-blur-md p-12 rounded-2xl shadow-2xl border-2 border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-500">
             <h2 className="text-3xl font-bold text-[#FFD700] text-center mb-8">Order History</h2>
             <div className="space-y-6 max-h-[500px] overflow-y-auto custom-scrollbar">
-              {orders.length > 0 ? (
+              {Array.isArray(orders) && orders.length > 0 ? (
                 orders.map((order) => (
                   <div
                     key={order.id}
