@@ -14,6 +14,7 @@ const PaymentPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
+  const [paymentSuccess, setPaymentSuccess] = useState(false); // New state for success message
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -67,7 +68,6 @@ const PaymentPage = () => {
     return '';
   };
 
- 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     let formattedValue = value;
@@ -224,14 +224,8 @@ const PaymentPage = () => {
           sessionStorage.removeItem('cart');
           sessionStorage.removeItem('orderId');
           sessionStorage.removeItem('orderTotal');
-          
-          navigate('/order-confirmation', { 
-            state: { 
-              orderId: orderId,
-              status: 'success',
-              amount: orderTotal
-            }
-          });
+
+          setPaymentSuccess(true); // Set payment success to true
         } else {
           throw new Error(data.message || 'Payment was not completed successfully');
         }
@@ -252,98 +246,104 @@ const PaymentPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#8B0000] to-[#000000] text-white flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-md mx-auto bg-black bg-opacity-80 backdrop-blur-md border-4 border-yellow-500 rounded-xl shadow-lg p-8 mt-8">
-        <h1 className="text-3xl font-bold text-center text-yellow-500 mb-8">Secure Payment</h1>
-        
-        {errorMessage && (
-          <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-300 px-4 py-2 rounded mb-4">
-            {errorMessage}
+        {paymentSuccess ? (
+          <div className="text-center text-xl font-semibold text-green-500">
+            Payment Successful! Thank you for your purchase!
           </div>
-        )}
-
-        <form onSubmit={handlePaymentSubmit} className="space-y-6">
-          <div className="mb-6 text-center">
-            <h2 className="text-xl font-semibold text-yellow-500">Order Total</h2>
-            <p className="text-2xl font-bold text-white">${orderTotal.toFixed(2)}</p>
-          </div>
-
-          <div className="space-y-2">
-            <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-300">
-              Card Number
-            </label>
-            <input
-              id="cardNumber"
-              type="text"
-              name="cardNumber"
-              value={paymentInfo.cardNumber}
-              onChange={handleInputChange}
-              onBlur={handleBlur}
-              placeholder="1234 5678 9012 3456"
-              className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                formErrors.cardNumber ? 'border-red-500' : ''
-              }`}
-              autoComplete="cc-number"
-            />
-            {formErrors.cardNumber && (
-              <p className="text-red-500 text-sm mt-1">{formErrors.cardNumber}</p>
+        ) : (
+          <>
+            <h1 className="text-3xl font-bold text-center text-yellow-500 mb-8">Secure Payment</h1>
+            
+            {errorMessage && (
+              <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-300 px-4 py-2 rounded mb-4">
+                {errorMessage}
+              </div>
             )}
-          </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-300">
-                Expiration Date (MM/YY)
-              </label>
-              <input
-                id="expirationDate"
-                type="text"
-                name="expirationDate"
-                value={paymentInfo.expirationDate}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                placeholder="MM/YY"
-                className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                  formErrors.expirationDate ? 'border-red-500' : ''
-                }`}
-                autoComplete="cc-exp"
-              />
-              {formErrors.expirationDate && (
-                <p className="text-red-500 text-sm mt-1">{formErrors.expirationDate}</p>
-              )}
-            </div>
+            <form onSubmit={handlePaymentSubmit} className="space-y-6">
+              <div className="mb-6 text-center">
+                <h2 className="text-xl font-semibold text-yellow-500">Order Total</h2>
+                <p className="text-2xl font-bold text-white">${orderTotal.toFixed(2)}</p>
+              </div>
 
-            <div className="space-y-2">
-              <label htmlFor="cvv" className="block text-sm font-medium text-gray-300">
-                CVV
-              </label>
-              <input
-                id="cvv"
-                type="text"
-                name="cvv"
-                value={paymentInfo.cvv}
-                onChange={handleInputChange}
-                onBlur={handleBlur}
-                placeholder="123"
-                className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                  formErrors.cvv ? 'border-red-500' : ''
-                }`}
-                autoComplete="cc-csc"
-              />
-              {formErrors.cvv && (
-                <p className="text-red-500 text-sm mt-1">{formErrors.cvv}</p>
-              )}
-            </div>
-          </div>
+              <div className="space-y-2">
+                <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-300">
+                  Card Number
+                </label>
+                <input
+                  id="cardNumber"
+                  type="text"
+                  name="cardNumber"
+                  value={paymentInfo.cardNumber}
+                  onChange={handleInputChange}
+                  onBlur={handleBlur}
+                  placeholder="1234 5678 9012 3456"
+                  className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                    formErrors.cardNumber ? 'border-red-500' : ''
+                  }`}
+                  autoComplete="cc-number"
+                />
+                {formErrors.cardNumber && (
+                  <p className="text-red-500 text-sm mt-1">{formErrors.cardNumber}</p>
+                )}
+              </div>
 
-          <div className="mt-6 text-center">
-            <button
-              type="submit"
-              className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-600 focus:ring-opacity-50"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? 'Processing...' : 'Complete Payment'}
-            </button>
-          </div>
-        </form>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label htmlFor="expirationDate" className="block text-sm font-medium text-gray-300">
+                    Expiration Date (MM/YY)
+                  </label>
+                  <input
+                    id="expirationDate"
+                    type="text"
+                    name="expirationDate"
+                    value={paymentInfo.expirationDate}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    placeholder="MM/YY"
+                    className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                      formErrors.expirationDate ? 'border-red-500' : ''
+                    }`}
+                    autoComplete="cc-exp"
+                  />
+                  {formErrors.expirationDate && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.expirationDate}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label htmlFor="cvv" className="block text-sm font-medium text-gray-300">
+                    CVV
+                  </label>
+                  <input
+                    id="cvv"
+                    type="text"
+                    name="cvv"
+                    value={paymentInfo.cvv}
+                    onChange={handleInputChange}
+                    onBlur={handleBlur}
+                    placeholder="123"
+                    className={`w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                      formErrors.cvv ? 'border-red-500' : ''
+                    }`}
+                    autoComplete="cc-csc"
+                  />
+                  {formErrors.cvv && (
+                    <p className="text-red-500 text-sm mt-1">{formErrors.cvv}</p>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-2 bg-yellow-500 text-black font-bold rounded-md hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-600 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Processing...' : 'Submit Payment'}
+              </button>
+            </form>
+          </>
+        )}
       </div>
     </div>
   );
