@@ -10,18 +10,19 @@ function ProfilePage() {
   const [contentVisible, setContentVisible] = useState(false);
   const navigate = useNavigate();
 
+  // Fetch User Info
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
         const token = sessionStorage.getItem("token");
         console.log("Using token:", token); // Debug log
-        
+
         if (!token) {
           console.error("No token found in session storage");
           navigate("/login");
           return;
         }
-        
+
         const response = await axios.get("http://localhost:8081/api/user/info", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -46,6 +47,7 @@ function ProfilePage() {
     fetchUserInfo();
   }, [navigate]);
 
+  // Fetch Orders
   useEffect(() => {
     if (!user) return; // Don't fetch orders if user is not loaded
 
@@ -53,13 +55,13 @@ function ProfilePage() {
       try {
         const token = sessionStorage.getItem("token");
         console.log("Using token for orders:", token); // Debug log
-        
+
         if (!token) {
           console.error("No token found in session storage");
           navigate("/login");
           return;
         }
-        
+
         const response = await axios.get("http://localhost:8081/api/orders/user", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -80,6 +82,7 @@ function ProfilePage() {
     fetchOrders();
   }, [user]);
 
+  // Fade In Effect for Profile Section
   useEffect(() => {
     setTimeout(() => setTitleVisible(true), 500);
     setTimeout(() => setContentVisible(true), 1000);
@@ -150,7 +153,7 @@ function ProfilePage() {
           <div className="bg-black bg-opacity-80 backdrop-blur-md p-12 rounded-2xl shadow-2xl border-2 border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-500">
             <h2 className="text-3xl font-bold text-[#FFD700] text-center mb-8">Order History</h2>
             <div className="space-y-6 max-h-[500px] overflow-y-auto custom-scrollbar">
-              {Array.isArray(orders) && orders.length > 0 ? (
+              {orders.length > 0 ? (
                 orders.map((order) => (
                   <div
                     key={order.id}
@@ -180,8 +183,8 @@ function ProfilePage() {
                       </p>
                       <div className="mt-3">
                         <p className="text-[#FFD700]">Shipping Address:</p>
-                        <p className="text-gray-300 text-sm mt-1">{order.shippingInfo.address}</p>
-                        <p className="text-gray-300 text-sm">{order.shippingInfo.city}, {order.shippingInfo.country}</p>
+                        <p className="text-gray-300 text-sm mt-1">{order.shippingInfo?.address || "Address not available"}</p>
+                        <p className="text-gray-300 text-sm">{order.shippingInfo?.city}, {order.shippingInfo?.country}</p>
                       </div>
                       {order.paymentInfo?.paymentStatus === 'COMPLETED' && (
                         <div className="mt-3">
@@ -225,21 +228,8 @@ function ProfilePage() {
       </style>
 
       {/* Footer */}
-      <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p> 2025 All Rights Reserved. HALF BAD</p>
-        <div className="mt-2">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <a href="mailto:your-email@example.com" className="hover:text-white">Email</a>
-            </li>
-            <li>
-              <a href="https://www.facebook.com/pusiaublogas/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Facebook</a>
-            </li>
-            <li>
-              <a href="https://www.instagram.com/half_bad_dnb/?locale=en%2F" target="_blank" rel="noopener noreferrer" className="hover:text-white">Instagram</a>
-            </li>
-          </ul>
-        </div>
+      <footer className="bg-black text-gray-300 text-center py-6">
+        <p>&copy; 2025 Anilora - All rights reserved.</p>
       </footer>
     </div>
   );

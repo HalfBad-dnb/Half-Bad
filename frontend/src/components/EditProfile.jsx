@@ -7,7 +7,6 @@ const EditProfile = () => {
     email: "",
     profilePicture: "",
     address: "",
-    preferences: "",
   });
 
   const [profilePictureFile, setProfilePictureFile] = useState(null);
@@ -46,7 +45,6 @@ const EditProfile = () => {
     const formData = new FormData();
     formData.append("profilePicture", profilePictureFile);
     formData.append("address", user.address);
-    formData.append("preferences", user.preferences);
 
     axios
       .put("http://localhost:8081/api/user/update", formData, {

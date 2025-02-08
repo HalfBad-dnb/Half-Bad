@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import "./App.css";
 import { BrowserRouter as Router, Route, Routes, NavLink, Navigate } from "react-router-dom";
 import HomePage from "./components/HomePage";
@@ -10,13 +10,14 @@ import ProfilePage from "./components/ProfilePage";
 import EditProfile from "./components/EditProfile";
 import CartPage from "./components/CartPage";
 import CheckoutPage from "./components/CheckoutPage";
-import PaymentPage from "./components/PaymentPage"; // Ensure it's correctly imported
+import PaymentPage from "./components/PaymentPage";
 import OrderConfirmationPage from "./components/OrderConfirmationPage";
+import AdminPanel from "./components/AdminPanel"; // New Admin Panel component
 import MusicPage from "./components/MusicPage";
 import EventsPage from "./components/EventsPage";
 import { useCart, CartProvider } from "./Context/CartContext";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faMusic, faShoppingBasket, faCartPlus, faUser, faSignOutAlt, faCalendarAlt } from '@fortawesome/free-solid-svg-icons';
+import { faHome, faMusic, faShoppingBasket, faCartPlus, faUser, faSignOutAlt, faCalendarAlt, faUserShield } from '@fortawesome/free-solid-svg-icons'; // Imported faUserShield
 
 const ErrorBoundary = ({ children }) => {
   const [hasError, setHasError] = useState(false);
@@ -56,17 +57,32 @@ function App() {
 
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(null); // Initialize user role state
   const { cart } = useCart();
 
   useEffect(() => {
+    // Check if the user is authenticated and retrieve role from sessionStorage
     const token = sessionStorage.getItem("token");
-    setIsAuthenticated(!!token);
-  }, []);
+    const role = sessionStorage.getItem("role"); // Retrieve role from sessionStorage
+
+    if (token) {
+      setIsAuthenticated(true);
+      setUserRole(role); // Set role if user is authenticated
+    } else {
+      setIsAuthenticated(false);
+      setUserRole(null); // Reset role if not authenticated
+    }
+  }, []); // Empty array ensures this effect runs only on initial load
 
   const handleLogout = () => {
     sessionStorage.removeItem("token");
+    sessionStorage.removeItem("role");  // Remove role from session storage
     setIsAuthenticated(false);
+    setUserRole(null); // Reset role when logging out
   };
+
+  // Use memoization for cart count to optimize re-renders
+  const cartCount = useMemo(() => cart?.reduce((acc, item) => acc + item.quantity, 0) || 0, [cart]);
 
   return (
     <Router>
@@ -99,7 +115,7 @@ function AppContent() {
               <div className="flex items-center space-x-6 text-sm">
                 <NavLink to="/cart" className="text-white hover:text-[#FFD700] transition duration-300">
                   <FontAwesomeIcon icon={faCartPlus} className="mr-2" />
-                  Cart ({cart?.reduce((acc, item) => acc + item.quantity, 0) || 0})
+                  Cart ({cartCount})
                 </NavLink>
                 {!isAuthenticated ? (
                   <>
@@ -114,10 +130,18 @@ function AppContent() {
                   </>
                 ) : (
                   <>
-                    <NavLink to="/profile" className="text-white hover:text-[#FFD700] transition duration-300">
-                      <FontAwesomeIcon icon={faUser} className="mr-2" />
-                      Profile
-                    </NavLink>
+                    {/* Show Admin Panel if role is admin */}
+                    {userRole === "ADMIN" ? (
+                      <NavLink to="/admin" className="text-white hover:text-[#FFD700] transition duration-300">
+                        <FontAwesomeIcon icon={faUserShield} className="mr-2" /> {/* Admin Icon */}
+                        Admin Panel
+                      </NavLink>
+                    ) : (
+                      <NavLink to="/profile" className="text-white hover:text-[#FFD700] transition duration-300">
+                        <FontAwesomeIcon icon={faUser} className="mr-2" />
+                        Profile
+                      </NavLink>
+                    )}
                     <button onClick={handleLogout} className="text-[#FFD700] hover:text-[#FFCC00] transition duration-300">
                       <FontAwesomeIcon icon={faSignOutAlt} className="mr-2" />
                       Logout
@@ -144,11 +168,14 @@ function AppContent() {
             <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
 
             {/* Protected Routes */}
-            <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
+            <Route path="/profile" element={isAuthenticated && userRole !== "ADMIN" ? <ProfilePage /> : <Navigate to={userRole === "ADMIN" ? "/admin" : "/login"} />} />
             <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" />} />
             <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
             <Route path="/order-confirmation" element={isAuthenticated ? <OrderConfirmationPage /> : <Navigate to="/login" />} />
+
+            {/* Admin Panel Route */}
+            <Route path="/admin" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to={isAuthenticated ? "/profile" : "/login"} />} /> 
           </Routes>
         </main>
       </div>

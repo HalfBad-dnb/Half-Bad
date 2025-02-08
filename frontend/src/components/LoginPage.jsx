@@ -49,8 +49,9 @@ function LoginPage({ setIsAuthenticated }) {
       sessionStorage.setItem("role", data.role);
       
       setIsAuthenticated(true);
-      // Check if there's a return URL in the state
-      const returnUrl = location.state?.returnUrl || "/profile";
+      
+      // Redirect user based on their role
+      const returnUrl = location.state?.returnUrl || (data.role === "ADMIN" ? "/admin" : "/profile");
       navigate(returnUrl);
     } catch (err) {
       setError("An error occurred. Please try again.");

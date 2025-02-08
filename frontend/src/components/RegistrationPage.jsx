@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faEnvelope, faLock, faLockOpen } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faEnvelope, faLock, faLockOpen, faPhone } from '@fortawesome/free-solid-svg-icons';
 
 function RegistrationPage() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [first_name, setfirst_name] = useState(""); // Added first name
+  const [last_name, setlast_name] = useState(""); // Added last name
+  const [address, setAddress] = useState(""); // Added address
+  const [phoneNumber, setPhoneNumber] = useState(""); // Added phone number
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [visible, setVisible] = useState(false);
@@ -41,7 +45,15 @@ function RegistrationPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, email, password }),
+        body: JSON.stringify({
+          username,
+          email,
+          password,
+          first_name,
+          last_name,
+          address,
+          phoneNumber
+        }),
       });
 
       if (!response.ok) {
@@ -55,6 +67,10 @@ function RegistrationPage() {
       setEmail("");
       setPassword("");
       setConfirmPassword("");
+      setfirst_name("");
+      setlast_name("");
+      setAddress("");
+      setPhoneNumber("");
       navigate("/login");
     } catch (err) {
       setError("An error occurred. Please try again.");
@@ -91,6 +107,7 @@ function RegistrationPage() {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Existing fields */}
               <div>
                 <label htmlFor="username" className="block text-[#FFD700] text-sm font-medium mb-2">
                   <FontAwesomeIcon icon={faUser} className="mr-2" /> Username
@@ -104,7 +121,6 @@ function RegistrationPage() {
                   className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
                   required
                 />
-                <small className="text-gray-400 mt-1 block">Choose a unique username</small>
               </div>
 
               <div>
@@ -120,9 +136,66 @@ function RegistrationPage() {
                   className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
                   required
                 />
-                <small className="text-gray-400 mt-1 block">We'll never share your email</small>
               </div>
 
+              {/* New fields */}
+              <div>
+                <label htmlFor="first_name" className="block text-[#FFD700] text-sm font-medium mb-2">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  id="first_name"
+                  value={first_name}
+                  onChange={(e) => setfirst_name(e.target.value)}
+                  placeholder="Enter your first name"
+                  className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="last_name" className="block text-[#FFD700] text-sm font-medium mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  id="last_name"
+                  value={last_name}
+                  onChange={(e) => setlast_name(e.target.value)}
+                  placeholder="Enter your last name"
+                  className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-[#FFD700] text-sm font-medium mb-2">
+                  Address
+                </label>
+                <input
+                  type="text"
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  placeholder="Enter your address"
+                  className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phoneNumber" className="block text-[#FFD700] text-sm font-medium mb-2">
+                  <FontAwesomeIcon icon={faPhone} className="mr-2" /> Phone Number
+                </label>
+                <input
+                  type="tel"
+                  id="phoneNumber"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  placeholder="Enter your phone number"
+                  className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
+                />
+              </div>
+
+              {/* Password */}
               <div>
                 <label htmlFor="password" className="block text-[#FFD700] text-sm font-medium mb-2">
                   <FontAwesomeIcon icon={faLock} className="mr-2" /> Password
@@ -136,7 +209,6 @@ function RegistrationPage() {
                   className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
                   required
                 />
-                <small className="text-gray-400 mt-1 block">Minimum 8 characters</small>
               </div>
 
               <div>
@@ -152,48 +224,18 @@ function RegistrationPage() {
                   className="w-full px-4 py-3 bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/60 rounded-lg outline-none transition-all duration-300 text-white placeholder-gray-400"
                   required
                 />
-                <small className="text-gray-400 mt-1 block">Re-enter your password</small>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-[#FFD700] text-black font-bold py-3 px-6 rounded-lg transform hover:scale-105 transition-all duration-300"
+                className="w-full py-3 mt-6 bg-[#FFD700] text-black font-semibold rounded-lg hover:bg-[#ffdd00] transition duration-300"
               >
-                Create Account
+                Register
               </button>
-
-              <div className="text-center mt-6">
-                <p className="text-gray-300">
-                  Already have an account?{" "}
-                  <button
-                    type="button"
-                    onClick={() => navigate("/login")}
-                    className="text-[#FFD700] hover:text-[#FFD700]/80 transition-colors duration-300"
-                  >
-                    Sign in here
-                  </button>
-                </p>
-              </div>
             </form>
           </div>
         </div>
       </div>
-      <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-             <p> 2025 All Rights Reserved. HALF BAD</p>
-     <div className="mt-2">
-    <ul className="flex justify-center space-x-6">
-      <li>
-        <a href="mailto:your-email@example.com" className="hover:text-white">Email</a>
-      </li>
-      <li>
-        <a href="https://www.facebook.com/pusiaublogas/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Facebook</a>
-      </li>
-      <li>
-        <a href="https://www.instagram.com/half_bad_dnb/?locale=en%2F" target="_blank" rel="noopener noreferrer" className="hover:text-white">Instagram</a>
-      </li>
-    </ul>
-  </div>
-</footer>
     </div>
   );
 }
