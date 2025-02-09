@@ -1,6 +1,6 @@
 -- Insert test user (password is 'password123')
 INSERT INTO users (username, password, email, role, first_name, last_name, is_active, created_at, updated_at)
-VALUES ('testuser', '$2a$10$8jf7TJa.4/LuVaGVI8GTk.VVQ2kX5IkHxvVnNJt0ckmjQPDHqbB9G', 'test@example.com', 'USER', 'Test', 'User', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+VALUES ('testuser', '$2a$10$8jf7TJa.4/LuVaGVI8GTk.VVQ2kX5IkHxvVnNJt0ckmjQPDHqbB9G', 'test@example.com', 'ADMIN', 'Test', 'User', true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 -- Insert sample products
 INSERT INTO products (name, description, price, image_url, category, stock) VALUES

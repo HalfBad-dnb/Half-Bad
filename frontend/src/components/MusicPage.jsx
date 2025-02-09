@@ -3,25 +3,9 @@ import { Link } from 'react-router-dom';
 
 const MusicPage = () => {
   const [visible, setVisible] = useState(false);
-  const [musicProducts, setMusicProducts] = useState([]);
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 500);
-
-    // Fetch music products from the database
-    const fetchMusicProducts = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/music');
-        if (response.ok) {
-          const data = await response.json();
-          setMusicProducts(data);
-        }
-      } catch (error) {
-        console.error('Error fetching music products:', error);
-      }
-    };
-
-    fetchMusicProducts();
   }, []);
 
   const musicTracks = [
@@ -95,7 +79,6 @@ const MusicPage = () => {
       cover: "https://via.placeholder.com/300x300?text=Album+Cover+14",
       artist: "Half Bad",
     },
-    // New track added
     {
       youtubeUrl: "https://www.youtube.com/watch?v=xOOEtdSGMC8",
       cover: "https://via.placeholder.com/300x300?text=Album+Cover+15",
@@ -112,34 +95,6 @@ const MusicPage = () => {
           <h1 className={`text-5xl font-bold text-[#FFD700] mb-6 animate-pulse transition-all duration-1000 ease-in-out ${visible ? 'opacity-100 transform scale-100 blur-0' : 'opacity-0 transform scale-150 blur-sm'}`}>
             Music Collection
           </h1>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
-            {musicProducts.map((product) => (
-              <div
-                key={product._id}
-                className="bg-black bg-opacity-80 backdrop-blur-md p-12 rounded-2xl shadow-2xl border-2 border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-500 transform hover:scale-105"
-              >
-                <Link to={`/products/${product._id}`} className="block">
-                  <div className="mb-6 aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg">
-                    <img
-                      src={product.imageUrl || '/images/default-music.jpg'}
-                      alt={product.name}
-                      className="h-64 w-full object-cover object-center rounded-lg shadow-xl ring-4 ring-[#FFD700]/20"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = '/images/default-music.jpg';
-                      }}
-                    />
-                  </div>
-                  <h3 className="text-2xl font-bold text-[#FFD700] mb-4">{product.name}</h3>
-                  <p className="text-gray-300 mb-4 text-lg">{product.description}</p>
-                  <p className="text-2xl text-yellow-500 mb-6">${product.price.toFixed(2)}</p>
-                  <button className="w-full bg-[#FFD700] hover:bg-[#FFD700]/80 text-black font-bold py-3 px-8 rounded-full transition-all duration-300 hover:scale-105">
-                    View Details
-                  </button>
-                </Link>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

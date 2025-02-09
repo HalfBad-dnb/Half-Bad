@@ -63,8 +63,8 @@ function AppContent() {
   useEffect(() => {
     // Check if the user is authenticated and retrieve role from sessionStorage
     const token = sessionStorage.getItem("token");
-    const role = sessionStorage.getItem("role"); // Retrieve role from sessionStorage
-
+    const role = sessionStorage.getItem("role");
+  
     if (token) {
       setIsAuthenticated(true);
       setUserRole(role); // Set role if user is authenticated
@@ -72,13 +72,37 @@ function AppContent() {
       setIsAuthenticated(false);
       setUserRole(null); // Reset role if not authenticated
     }
-  }, []); // Empty array ensures this effect runs only on initial load
-
+  }, []); // This effect runs only once on initial load
+  
+  useEffect(() => {
+    // When userRole changes (e.g., from logout or login)
+    if (userRole === "ADMIN") {
+      // Fetch admin data or trigger actions needed for the Admin panel
+      fetchAdminData();
+    }
+  }, [userRole]); // Runs every time userRole changes
+  
+  const fetchAdminData = async () => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.json();
+      // Set your admin data here or trigger any other state updates
+      console.log("Admin data fetched:", data);
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+    }
+  };
+  
   const handleLogout = () => {
     sessionStorage.removeItem("token");
-    sessionStorage.removeItem("role");  // Remove role from session storage
+    sessionStorage.removeItem("role");  // Clear role from sessionStorage
     setIsAuthenticated(false);
-    setUserRole(null); // Reset role when logging out
+    setUserRole(null); // Reset role on logout
   };
 
   // Use memoization for cart count to optimize re-renders
@@ -132,7 +156,7 @@ function AppContent() {
                   <>
                     {/* Show Admin Panel if role is admin */}
                     {userRole === "ADMIN" ? (
-                      <NavLink to="/admin" className="text-white hover:text-[#FFD700] transition duration-300">
+                      <NavLink to="/AdminPanel" className="text-white hover:text-[#FFD700] transition duration-300">
                         <FontAwesomeIcon icon={faUserShield} className="mr-2" /> {/* Admin Icon */}
                         Admin Panel
                       </NavLink>
@@ -168,14 +192,14 @@ function AppContent() {
             <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
 
             {/* Protected Routes */}
-            <Route path="/profile" element={isAuthenticated && userRole !== "ADMIN" ? <ProfilePage /> : <Navigate to={userRole === "ADMIN" ? "/admin" : "/login"} />} />
+            <Route path="/profile" element={isAuthenticated && userRole !== "ADMIN" ? <ProfilePage /> : <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/login"} />} />
             <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" />} />
             <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
             <Route path="/order-confirmation" element={isAuthenticated ? <OrderConfirmationPage /> : <Navigate to="/login" />} />
 
             {/* Admin Panel Route */}
-            <Route path="/admin" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to={isAuthenticated ? "/profile" : "/login"} />} /> 
+            <Route path="/AdminPanel" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to={isAuthenticated ? "/AdminPanel" : "/login"} />} /> 
           </Routes>
         </main>
       </div>

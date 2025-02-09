@@ -33,13 +33,15 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-  // Login function to set user, role, and authentication status
   const login = (userData) => {
     try {
       setUser(userData);
       setIsAuthenticated(true);
-      setUserRole(userData.role);  // Set the user's role when they log in
+      setUserRole(userData.role);
       localStorage.setItem("user", JSON.stringify(userData));
+  
+      // Refresh the page after login to apply role-based UI updates
+      window.location.reload();
     } catch (error) {
       console.error("Error saving user data:", error);
     }

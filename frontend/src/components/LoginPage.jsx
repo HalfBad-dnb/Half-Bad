@@ -38,21 +38,28 @@ function LoginPage({ setIsAuthenticated }) {
 
       const data = await response.json();
       console.log('Login response:', data);
-      
-      // Store token without Bearer prefix
+
+      // Store token and user info in sessionStorage
       sessionStorage.setItem("token", data.token);
-      
-      // Store user info
+      sessionStorage.setItem("refreshToken", data.refreshToken);
       sessionStorage.setItem("userId", data.userId);
       sessionStorage.setItem("username", data.username);
       sessionStorage.setItem("email", data.email);
       sessionStorage.setItem("role", data.role);
-      
+
+      // Update authentication status
       setIsAuthenticated(true);
+
+      // Redirect user based on their role or returnUrl
+      const returnUrl = location.state?.returnUrl || (data.role === "ADMIN" ? "/AdminPanel" : "/");
       
-      // Redirect user based on their role
-      const returnUrl = location.state?.returnUrl || (data.role === "ADMIN" ? "/admin" : "/profile");
       navigate(returnUrl);
+      
+      // Force a page reload after navigation
+      setTimeout(() => {
+        window.location.reload();
+      }, 100); 
+
     } catch (err) {
       setError("An error occurred. Please try again.");
     }
@@ -138,7 +145,7 @@ function LoginPage({ setIsAuthenticated }) {
 
       {/* Footer */}
       <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p> 2025 All Rights Reserved. HALF BAD</p>
+        <p>2025 All Rights Reserved. HALF BAD</p>
         <div className="mt-2">
           <ul className="flex justify-center space-x-6">
             <li>
