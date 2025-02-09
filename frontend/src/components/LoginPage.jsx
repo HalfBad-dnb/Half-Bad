@@ -11,6 +11,7 @@ function LoginPage({ setIsAuthenticated }) {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Makes the login header animate when the component is mounted
   useEffect(() => {
     setTimeout(() => {
       setVisible(true);
@@ -19,7 +20,7 @@ function LoginPage({ setIsAuthenticated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError("");
+    setError(""); // Clear previous errors
 
     try {
       const response = await fetch("http://localhost:8081/api/auth/login", {
@@ -52,10 +53,10 @@ function LoginPage({ setIsAuthenticated }) {
 
       // Redirect user based on their role or returnUrl
       const returnUrl = location.state?.returnUrl || (data.role === "ADMIN" ? "/AdminPanel" : "/");
-      
+
       navigate(returnUrl);
       
-      // Force a page reload after navigation
+      // Optional: Refresh the page after navigation, if needed
       setTimeout(() => {
         window.location.reload();
       }, 100); 

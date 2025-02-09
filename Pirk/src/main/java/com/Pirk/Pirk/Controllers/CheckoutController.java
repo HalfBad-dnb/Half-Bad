@@ -8,8 +8,9 @@ import com.Pirk.Pirk.exceptions.PaymentDeclinedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import java.util.ArrayList;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
 import java.util.Map;
 
 @RestController
@@ -113,7 +114,10 @@ public class CheckoutController {
             // Set the buyer ID in the payment request
             request.setBuyerId(checkout.getUser().getId());
             request.setOrderId(id); // Set checkout ID as order ID
-            request.setAmount(checkout.getTotalAmount()); // Set amount from checkout
+
+            // Ensure total amount has two decimal places
+            BigDecimal totalAmount = checkout.getTotalAmount().setScale(2, RoundingMode.HALF_UP); // Two decimal places, rounded up
+            request.setAmount(totalAmount); // Set amount from checkout
             
             // Create order
             Order order = new Order();
@@ -132,7 +136,7 @@ public class CheckoutController {
                 .phoneNumber(checkout.getShippingAddress().getPhoneNumber())
                 .build();
             order.setShippingInfo(shippingInfo);
-            order.setTotalAmount(checkout.getTotalAmount());
+            order.setTotalAmount(totalAmount); // Use the scaled total amount
             
             // Save order
             Order savedOrder = orderService.createOrder(order);

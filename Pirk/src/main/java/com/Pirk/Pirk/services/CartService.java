@@ -7,6 +7,7 @@ import com.Pirk.Pirk.repositories.CartRepository;
 import com.Pirk.Pirk.repositories.ProductRepository;
 import com.Pirk.Pirk.repositories.UserRepository;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.util.Optional;
 
@@ -32,7 +33,6 @@ public class CartService {
 
         return cartRepository.findByUserId(userId)
                 .orElseGet(() -> {
-                    // If no cart exists, create a new one
                     Cart newCart = new Cart();
                     newCart.setUser(user.get());
                     return cartRepository.save(newCart);
@@ -41,21 +41,31 @@ public class CartService {
 
     // Add item to the cart
     public void addItemToCart(Long userId, Long productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+
         Cart cart = getCartByUserId(userId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        cart.addItem(product, quantity, product.getPrice());
+        BigDecimal totalPrice = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+        cart.addItem(product, quantity, totalPrice);
         cartRepository.save(cart);
     }
 
     // Remove item from the cart
     public void removeItemFromCart(Long userId, Long productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be greater than zero");
+        }
+
         Cart cart = getCartByUserId(userId);
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        cart.removeItem(productId, quantity, product.getPrice());
+        BigDecimal totalPrice = product.getPrice().multiply(BigDecimal.valueOf(quantity));
+        cart.removeItem(productId, quantity, totalPrice);
         cartRepository.save(cart);
     }
 
