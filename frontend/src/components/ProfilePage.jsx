@@ -227,9 +227,21 @@ function ProfilePage() {
         `}
       </style>
 
-      {/* Footer */}
-      <footer className="bg-black text-gray-300 text-center py-6">
-        <p>&copy; 2025 Anilora - All rights reserved.</p>
+      <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
+        <p> 2025 All Rights Reserved. HALF BAD</p>
+        <div className="mt-2">
+          <ul className="flex justify-center space-x-6">
+            <li>
+              <a href="mailto:your-email@example.com" className="hover:text-white">Email</a>
+            </li>
+            <li>
+              <a href="https://www.facebook.com/pusiaublogas/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Facebook</a>
+            </li>
+            <li>
+              <a href="https://www.instagram.com/half_bad_dnb/?locale=en%2F" target="_blank" rel="noopener noreferrer" className="hover:text-white">Instagram</a>
+            </li>
+          </ul>
+        </div>
       </footer>
     </div>
   );
