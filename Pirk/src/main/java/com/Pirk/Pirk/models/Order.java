@@ -16,7 +16,7 @@ public class Order {
 
     private String username;
 
-    @Column(name = "order_number", nullable = false)
+    @Column(name = "order_number", nullable = false, unique = true)
     private String orderNumber;
 
     @Column(name = "order_date", nullable = false)
@@ -26,12 +26,12 @@ public class Order {
     @Column(name = "total_amount", nullable = false, precision = 10, scale = 2)
     private BigDecimal totalAmount;
 
-    @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "shipping_info_id")
     private ShippingInfo shippingInfo;
 
     @JsonManagedReference
-    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToOne(mappedBy = "order", cascade = CascadeType.ALL)
     private PaymentInfo paymentInfo;
 
     @Column(name = "email_sent", nullable = false)
@@ -43,7 +43,7 @@ public class Order {
     @Column(nullable = false)
     private String status = "PENDING";
 
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
+    @OneToMany(cascade = CascadeType.PERSIST, orphanRemoval = true)
     @JoinColumn(name = "order_id")
     private List<CartItem> cartItems;
 
@@ -52,12 +52,22 @@ public class Order {
         orderDate = new Date();
         orderNumber = generateOrderNumber();
         if (totalAmount == null) {
-            totalAmount = BigDecimal.ZERO;
+            calculateTotalAmount();
         }
     }
 
     private String generateOrderNumber() {
         return "ORD-" + System.currentTimeMillis();
+    }
+
+    public void calculateTotalAmount() {
+        if (cartItems == null || cartItems.isEmpty()) {
+            this.totalAmount = BigDecimal.ZERO;
+            return;
+        }
+        this.totalAmount = cartItems.stream()
+            .map(CartItem::getSubtotal)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     // Getters and Setters
@@ -115,6 +125,9 @@ public class Order {
 
     public void setPaymentInfo(PaymentInfo paymentInfo) {
         this.paymentInfo = paymentInfo;
+        if (paymentInfo != null) {
+            paymentInfo.setOrder(this);
+        }
     }
 
     public Boolean getEmailSent() {
@@ -147,15 +160,5 @@ public class Order {
 
     public void setCartItems(List<CartItem> cartItems) {
         this.cartItems = cartItems;
-    }
-
-    public void calculateTotalAmount() {
-        if (cartItems == null || cartItems.isEmpty()) {
-            this.totalAmount = BigDecimal.ZERO;
-            return;
-        }
-        this.totalAmount = cartItems.stream()
-            .map(CartItem::getSubtotal)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 }

@@ -204,7 +204,7 @@ function EditProfilePage() {
 
       {/* Footer */}
       <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p> 2025 All Rights Reserved. HALF BAD</p>
+        <p>© 2025 All Rights Reserved. HALF BAD™</p>
         <div className="mt-2">
           <ul className="flex justify-center space-x-6">
             <li>

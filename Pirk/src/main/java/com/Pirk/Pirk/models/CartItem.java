@@ -1,5 +1,6 @@
 package com.Pirk.Pirk.models;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import java.math.BigDecimal;
 
@@ -13,6 +14,7 @@ public class CartItem {
 
     @ManyToOne
     @JoinColumn(name = "order_id")
+    @JsonIgnore // Prevents serialization of the associated Order object
     private Order order;
 
     @ManyToOne

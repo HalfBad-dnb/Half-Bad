@@ -54,23 +54,24 @@ function ProfilePage() {
     const fetchOrders = async () => {
       try {
         const token = sessionStorage.getItem("token");
-        console.log("Using token for orders:", token); // Debug log
-
+        console.log("Fetching orders with token:", token);
+    
         if (!token) {
           console.error("No token found in session storage");
           navigate("/login");
           return;
         }
-
+    
         const response = await axios.get("http://localhost:8081/api/orders/user", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-
+    
+        console.log("Raw orders response:", response); // Log the full response
+    
         if (response.status === 200) {
-          console.log("Orders response:", response.data); // Debug log
-          // Ensure orders is always an array
+          console.log("Orders data:", response.data);
           setOrders(Array.isArray(response.data) ? response.data : []);
         }
       } catch (err) {
@@ -84,8 +85,8 @@ function ProfilePage() {
 
   // Fade In Effect for Profile Section
   useEffect(() => {
-    setTimeout(() => setTitleVisible(true), 500);
-    setTimeout(() => setContentVisible(true), 1000);
+    setTimeout(() => setTitleVisible(true), 50);
+    setTimeout(() => setContentVisible(true), 100);
   }, []);
 
   if (error) {
@@ -228,7 +229,7 @@ function ProfilePage() {
       </style>
 
       <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p> 2025 All Rights Reserved. HALF BAD</p>
+        <p>© 2025 All Rights Reserved. HALF BAD™</p>
         <div className="mt-2">
           <ul className="flex justify-center space-x-6">
             <li>

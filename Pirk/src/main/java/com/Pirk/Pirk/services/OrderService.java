@@ -1,14 +1,13 @@
 package com.Pirk.Pirk.services;
 
 import com.Pirk.Pirk.models.Order;
+import com.Pirk.Pirk.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.List;
-
-import com.Pirk.Pirk.repositories.OrderRepository;
 
 @Service
 public class OrderService implements OrderServiceInterface {
@@ -20,7 +19,6 @@ public class OrderService implements OrderServiceInterface {
 
     @Transactional
     public Order createOrder(Order order) {
-        // Validate order
         if (order == null) {
             throw new IllegalArgumentException("Order cannot be null");
         }
@@ -32,14 +30,17 @@ public class OrderService implements OrderServiceInterface {
         }
 
         try {
-            // Set initial order status
             order.setStatus("PENDING");
-            
-            // Save the Order
+            order.calculateTotalAmount();
+
+            if (order.getPaymentInfo() != null) {
+                order.getPaymentInfo().setOrder(order);
+            }
+
             logger.info("Creating new order...");
             Order savedOrder = orderRepository.save(order);
             logger.info("Order created successfully with ID: {}", savedOrder.getId());
-            
+
             return savedOrder;
         } catch (Exception e) {
             logger.error("Error creating order: {}", e.getMessage());
@@ -57,13 +58,13 @@ public class OrderService implements OrderServiceInterface {
     }
 
     public List<Order> getOrdersByUserId(Long userId) {
-        logger.info("Attempting to fetch orders for user ID: {}", userId);
+        logger.info("Fetching orders for user ID: {}", userId);
         try {
             List<Order> orders = orderRepository.findByUserId(userId);
-            logger.info("Successfully retrieved {} orders for user ID: {}", orders.size(), userId);
+            logger.info("Retrieved {} orders for user ID: {}", orders.size(), userId);
             return orders;
         } catch (Exception e) {
-            logger.error("Error fetching orders for user ID {}: {}", userId, e.getMessage(), e);
+            logger.error("Error fetching orders: {}", e.getMessage(), e);
             throw new RuntimeException("Failed to fetch orders: " + e.getMessage(), e);
         }
     }
@@ -78,18 +79,14 @@ public class OrderService implements OrderServiceInterface {
 
     @Transactional
     public Order updateOrder(Order order) {
-        if (order == null) {
-            throw new IllegalArgumentException("Order cannot be null");
-        }
-        if (order.getId() == null) {
-            throw new IllegalArgumentException("Order ID cannot be null");
+        if (order == null || order.getId() == null) {
+            throw new IllegalArgumentException("Invalid order update request");
         }
 
         try {
+            order.calculateTotalAmount();
             logger.info("Updating order with ID: {}", order.getId());
-            Order updatedOrder = orderRepository.save(order);
-            logger.info("Order updated successfully");
-            return updatedOrder;
+            return orderRepository.save(order);
         } catch (Exception e) {
             logger.error("Error updating order: {}", e.getMessage());
             throw new RuntimeException("Failed to update order: " + e.getMessage());
