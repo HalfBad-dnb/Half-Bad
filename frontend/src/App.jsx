@@ -106,7 +106,10 @@ function AppContent() {
   };
 
   // Use memoization for cart count to optimize re-renders
-  const cartCount = useMemo(() => cart?.reduce((acc, item) => acc + item.quantity, 0) || 0, [cart]);
+  const cartCount = useMemo(() => {
+    if (userRole === "ADMIN") return 0; // Remove cart for ADMIN users
+    return cart?.reduce((acc, item) => acc + item.quantity, 0) || 0;
+  }, [cart, userRole]);
 
   return (
     <Router>
@@ -137,10 +140,12 @@ function AppContent() {
               </div>
 
               <div className="flex items-center space-x-6 text-sm">
-                <NavLink to="/cart" className="text-white hover:text-[#FFD700] transition duration-300">
-                  <FontAwesomeIcon icon={faCartPlus} className="mr-2" />
-                  Cart ({cartCount})
-                </NavLink>
+                {!isAuthenticated || userRole !== "ADMIN" ? (
+                  <NavLink to="/cart" className="text-white hover:text-[#FFD700] transition duration-300">
+                    <FontAwesomeIcon icon={faCartPlus} className="mr-2" />
+                    Cart ({cartCount})
+                  </NavLink>
+                ) : null}
                 {!isAuthenticated ? (
                   <>
                     <NavLink to="/login" className="text-white hover:text-[#FFD700] transition duration-300">
