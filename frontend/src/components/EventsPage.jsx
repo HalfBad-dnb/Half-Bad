@@ -23,7 +23,7 @@ function EventsPage() {
       time: "20:00",
       location: "Kablys + Kultūra",
       description: "Join us for an unforgettable night of Drum & Bass music!",
-      imageUrl: "/images/event1.jpg"
+      imageUrl: "/images/e1.webp"
     },
     {
       id: 2,
@@ -32,7 +32,7 @@ function EventsPage() {
       time: "18:00",
       location: "Lukiškių kalėjimas 2.0",
       description: "The biggest DNB event of the summer featuring international artists",
-      imageUrl: "/images/event2.jpg"
+      imageUrl: "/images/e1.webp"
     },
     {
       id: 3,
@@ -41,7 +41,7 @@ function EventsPage() {
       time: "22:00",
       location: "Tamsta Club",
       description: "A night of deep bass and electronic beats",
-      imageUrl: "/images/event3.jpg"
+      imageUrl: "/images/e1.webp"
     }
   ];
 
