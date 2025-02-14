@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import "./App.css";
 import { BrowserRouter as Router, Route, Routes, NavLink, Navigate } from "react-router-dom";
 import { useCart, CartProvider } from "./Context/CartContext";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -73,6 +74,27 @@ function AppContent() {
       setUserRole(null);
     }
   }, []);
+
+  const fetchAdminData = async () => {
+    if (userRole !== "ADMIN") return;
+
+    try {
+      const response = await fetch('/api/users', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      });
+      const data = await response.json();
+      console.log("Admin data fetched:", data);
+    } catch (error) {
+      console.error("Error fetching admin data:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdminData();
+  }, [userRole]);
 
   const handleLogout = () => {
     sessionStorage.removeItem("token");
@@ -192,8 +214,8 @@ function AppContent() {
             <Route path="/music" element={<MusicPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/cart" element={<CartPage />} />
-            <Route path="/register" element={isAuthenticated ? <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/profile"} /> : <RegistrationPage />} />
-            <Route path="/login" element={isAuthenticated ? <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/profile"} /> : <LoginPage setIsAuthenticated={setIsAuthenticated} setUserRole={setUserRole} />} />
+            <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <RegistrationPage />} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
             <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" />} />
