@@ -214,8 +214,8 @@ function AppContent() {
             <Route path="/music" element={<MusicPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/cart" element={<CartPage />} />
-            <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <RegistrationPage />} />
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
+            <Route path="/register" element={isAuthenticated ? <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/profile"} /> : <RegistrationPage />} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/profile"} /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
             <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" />} />
@@ -230,41 +230,24 @@ function AppContent() {
           <section className="mt-16 bg-black bg-opacity-60 py-12">
             <div className="max-w-3xl mx-auto px-6 text-center">
               <h2 className="text-3xl font-bold text-[#FFD700]">Stay in Touch</h2>
-              <p className="text-gray-300 mt-4 mb-6">
-                Subscribe to our newsletter for the latest news and special offers!
-              </p>
-              {subscriptionStatus && (
-                <p className={`mb-4 ${subscriptionStatus.includes('Success') ? 'text-green-500' : 'text-red-500'}`}>
-                  {subscriptionStatus}
-                </p>
-              )}
-              <form onSubmit={handleSubscription}>
+              <p className="text-white mt-4 mb-6">Subscribe to our newsletter to get updates about new merch, music, and events!</p>
+              <form onSubmit={handleSubscription} className="flex justify-center items-center">
                 <input
                   type="email"
+                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="px-4 py-2 rounded-md"
-                  placeholder="Enter your email"
+                  className="px-4 py-2 rounded-l-md text-black"
+                  required
                 />
-                <button type="submit" className="px-6 py-2 bg-[#FFD700] text-black rounded-md ml-4">
+                <button type="submit" className="bg-[#FFD700] text-black px-6 py-2 rounded-r-md hover:bg-[#FFCC00]">
                   Subscribe
                 </button>
               </form>
+              {subscriptionStatus && <p className="text-white mt-4">{subscriptionStatus}</p>}
             </div>
           </section>
         )}
-
-        {/* Footer Section */}
-        <footer className="bg-black text-white py-4 mt-16">
-          <div className="max-w-7xl mx-auto px-6 text-center">
-            <p>© 2025 All Rights Reserved. HALF BAD™</p>
-            <div className="mt-4 space-x-6">
-              <a href="mailto:info@halfbad.com" className="hover:text-[#FFD700]">Email</a>
-              <a href="https://facebook.com/halfbad" className="hover:text-[#FFD700]">Facebook</a>
-              <a href="https://instagram.com/halfbad" className="hover:text-[#FFD700]">Instagram</a>
-            </div>
-          </div>
-        </footer>
       </div>
     </Router>
   );
