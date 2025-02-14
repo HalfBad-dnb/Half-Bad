@@ -116,44 +116,8 @@ function EventsPage() {
         </div>
       </section>
 
-      {/* Newsletter Section */}
-      <section className="relative text-center py-20 px-8 z-30">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#4B0000] via-black to-[#4B0000] opacity-50"></div>
-        <div className="relative z-10 max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-[#FFD700] mb-6">Stay Updated</h2>
-          <p className="text-xl text-gray-300 mb-8">Subscribe to our newsletter for exclusive event updates and early bird tickets</p>
-          
-          <form className="flex flex-col md:flex-row gap-4">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 px-6 py-3 rounded-full bg-black bg-opacity-50 border-2 border-[#FFD700]/20 focus:border-[#FFD700]/40 text-white placeholder-gray-400 outline-none"
-            />
-            <button
-              type="submit"
-              className="px-8 py-3 bg-[#FFD700] hover:bg-[#FFD700]/80 text-black font-bold rounded-full transform transition-all duration-300 hover:scale-105"
-            >
-              Subscribe
-            </button>
-          </form>
-        </div>
-      </section>
-      <footer className="mt-auto bg-black bg-opacity-90 text-gray-400 py-4 text-center">
-        <p>© 2025 All Rights Reserved. HALF BAD™</p>
-        <div className="mt-2">
-          <ul className="flex justify-center space-x-6">
-            <li>
-              <a href="mailto:your-email@example.com" className="hover:text-white">Email</a>
-            </li>
-            <li>
-              <a href="https://www.facebook.com/pusiaublogas/" target="_blank" rel="noopener noreferrer" className="hover:text-white">Facebook</a>
-            </li>
-            <li>
-              <a href="https://www.instagram.com/half_bad_dnb/?locale=en%2F" target="_blank" rel="noopener noreferrer" className="hover:text-white">Instagram</a>
-            </li>
-          </ul>
-        </div>
-      </footer>
+      
+     
     </div>
   );
 }

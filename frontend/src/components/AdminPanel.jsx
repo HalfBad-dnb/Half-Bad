@@ -16,10 +16,12 @@ function AdminPanel() {
       try {
         const token = sessionStorage.getItem("token");
         if (!token) {
+          console.log("No token found, redirecting to login.");
           navigate("/login");
           return;
         }
 
+        console.log("Token found, fetching data...");
         const [usersRes, ordersRes, productsRes, musicRes, eventsRes] = await Promise.all([
           axios.get("http://localhost:8081/api/AdminPanel/users", { headers: { Authorization: `Bearer ${token}` } }),
           axios.get("http://localhost:8081/api/AdminPanel/orders", { headers: { Authorization: `Bearer ${token}` } }),
@@ -28,12 +30,15 @@ function AdminPanel() {
           axios.get("http://localhost:8081/api/AdminPanel/events", { headers: { Authorization: `Bearer ${token}` } }),
         ]);
 
+        console.log("API responses:", usersRes.data, ordersRes.data, productsRes.data, musicRes.data, eventsRes.data);
+
         setUsers(usersRes.data);
         setOrders(ordersRes.data);
         setProducts(productsRes.data);
         setMusic(musicRes.data);
         setEvents(eventsRes.data);
       } catch (err) {
+        console.log("Error fetching data:", err);
         setError("Failed to fetch data: " + (err.response?.data?.message || err.message));
         if (err.response?.status === 401) {
           navigate("/login");
@@ -85,3 +90,4 @@ function AdminPanel() {
 }
 
 export default AdminPanel;
+  

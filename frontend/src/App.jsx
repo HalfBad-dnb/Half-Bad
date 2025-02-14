@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useMemo } from "react";
-import "./App.css";
 import { BrowserRouter as Router, Route, Routes, NavLink, Navigate } from "react-router-dom";
+import { useCart, CartProvider } from "./Context/CartContext";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHome, faMusic, faShoppingBasket, faCartPlus, faUser, faSignOutAlt, faCalendarAlt, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import HomePage from "./components/HomePage";
 import ProductsPage from "./components/ProductsPage";
-import ProductDetailPage from "./components/ProductDetailPage"; 
+import ProductDetailPage from "./components/ProductDetailPage";
 import RegistrationPage from "./components/RegistrationPage";
 import LoginPage from "./components/LoginPage";
 import ProfilePage from "./components/ProfilePage";
@@ -12,12 +14,9 @@ import CartPage from "./components/CartPage";
 import CheckoutPage from "./components/CheckoutPage";
 import PaymentPage from "./components/PaymentPage";
 import OrderConfirmationPage from "./components/OrderConfirmationPage";
-import AdminPanel from "./components/AdminPanel"; // New Admin Panel component
+import AdminPanel from "./components/AdminPanel";
 import MusicPage from "./components/MusicPage";
 import EventsPage from "./components/EventsPage";
-import { useCart, CartProvider } from "./Context/CartContext";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faHome, faMusic, faShoppingBasket, faCartPlus, faUser, faSignOutAlt, faCalendarAlt, faUserShield } from '@fortawesome/free-solid-svg-icons'; // Imported faUserShield
 
 const ErrorBoundary = ({ children }) => {
   const [hasError, setHasError] = useState(false);
@@ -57,59 +56,64 @@ function App() {
 
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState(null); // Initialize user role state
+  const [userRole, setUserRole] = useState(null);
   const { cart } = useCart();
+  const [email, setEmail] = useState("");
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null);
 
   useEffect(() => {
-    // Check if the user is authenticated and retrieve role from sessionStorage
     const token = sessionStorage.getItem("token");
     const role = sessionStorage.getItem("role");
-  
+
     if (token) {
       setIsAuthenticated(true);
-      setUserRole(role); // Set role if user is authenticated
+      setUserRole(role);
     } else {
       setIsAuthenticated(false);
-      setUserRole(null); // Reset role if not authenticated
+      setUserRole(null);
     }
-  }, []); // This effect runs only once on initial load
-  
-  useEffect(() => {
-    // When userRole changes (e.g., from logout or login)
-    if (userRole === "ADMIN") {
-      // Fetch admin data or trigger actions needed for the Admin panel
-      fetchAdminData();
-    }
-  }, [userRole]); // Runs every time userRole changes
-  
-  const fetchAdminData = async () => {
-    try {
-      const response = await fetch('/api/users', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-        },
-      });
-      const data = await response.json();
-      // Set your admin data here or trigger any other state updates
-      console.log("Admin data fetched:", data);
-    } catch (error) {
-      console.error("Error fetching admin data:", error);
-    }
-  };
-  
+  }, []);
+
   const handleLogout = () => {
     sessionStorage.removeItem("token");
-    sessionStorage.removeItem("role");  // Clear role from sessionStorage
+    sessionStorage.removeItem("role");
     setIsAuthenticated(false);
-    setUserRole(null); // Reset role on logout
+    setUserRole(null);
+    window.location.href = '/login';
   };
 
-  // Use memoization for cart count to optimize re-renders
   const cartCount = useMemo(() => {
-    if (userRole === "ADMIN") return 0; // Remove cart for ADMIN users
+    if (userRole === "ADMIN") return 0;
     return cart?.reduce((acc, item) => acc + item.quantity, 0) || 0;
   }, [cart, userRole]);
+
+  const handleSubscription = async (e) => {
+    e.preventDefault();
+    if (!email) {
+      setSubscriptionStatus("Please enter your email address");
+      return;
+    }
+    try {
+      const response = await fetch("http://localhost:8081/api/subscribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      if (response.ok) {
+        setSubscriptionStatus("Success! Thank you for subscribing!");
+        setEmail("");
+      } else {
+        const data = await response.json();
+        setSubscriptionStatus(data.message || "Failed to subscribe. Please try again.");
+      }
+    } catch (error) {
+      console.error("Subscription error:", error);
+      setSubscriptionStatus("Failed to subscribe. Please try again later.");
+    }
+  };
 
   return (
     <Router>
@@ -119,7 +123,7 @@ function AppContent() {
             <nav className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-8 text-sm">
                 <NavLink to="/" className="flex items-center space-x-2">
-                  <img src="/images/l1.png" alt="My Logo" className="h-16" />
+                  <img src="/images/l1.png" alt="Logo" className="h-16" />
                 </NavLink>
                 <NavLink to="/" className="text-white hover:text-[#FFD700] transition duration-300">
                   <FontAwesomeIcon icon={faHome} className="mr-2" />
@@ -159,11 +163,9 @@ function AppContent() {
                   </>
                 ) : (
                   <>
-                    {/* Show Admin Panel if role is admin */}
                     {userRole === "ADMIN" ? (
                       <NavLink to="/AdminPanel" className="text-white hover:text-[#FFD700] transition duration-300">
-                        <FontAwesomeIcon icon={faUserShield} className="mr-2" /> {/* Admin Icon */}
-                        Admin Panel
+                        <FontAwesomeIcon icon={faUserShield} className="mr-2" /> Admin Panel
                       </NavLink>
                     ) : (
                       <NavLink to="/profile" className="text-white hover:text-[#FFD700] transition duration-300">
@@ -184,29 +186,63 @@ function AppContent() {
 
         <main className="pt-20">
           <Routes>
-            {/* Public Routes */}
             <Route path="/" element={<HomePage />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/products/:id" element={<ProductDetailPage />} />
             <Route path="/music" element={<MusicPage />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/cart" element={<CartPage />} />
-
-            {/* Authentication Routes */}
-            <Route path="/register" element={isAuthenticated ? <Navigate to="/profile" /> : <RegistrationPage />} />
-            <Route path="/login" element={isAuthenticated ? <Navigate to="/profile" /> : <LoginPage setIsAuthenticated={setIsAuthenticated} />} />
-
-            {/* Protected Routes */}
-            <Route path="/profile" element={isAuthenticated && userRole !== "ADMIN" ? <ProfilePage /> : <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/login"} />} />
+            <Route path="/register" element={isAuthenticated ? <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/profile"} /> : <RegistrationPage />} />
+            <Route path="/login" element={isAuthenticated ? <Navigate to={userRole === "ADMIN" ? "/AdminPanel" : "/profile"} /> : <LoginPage setIsAuthenticated={setIsAuthenticated} setUserRole={setUserRole} />} />
+            <Route path="/profile" element={isAuthenticated ? <ProfilePage /> : <Navigate to="/login" />} />
             <Route path="/edit-profile" element={isAuthenticated ? <EditProfile /> : <Navigate to="/login" />} />
             <Route path="/checkout" element={isAuthenticated ? <CheckoutPage /> : <Navigate to="/login" />} />
             <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
             <Route path="/order-confirmation" element={isAuthenticated ? <OrderConfirmationPage /> : <Navigate to="/login" />} />
-
-            {/* Admin Panel Route */}
-            <Route path="/AdminPanel" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to={isAuthenticated ? "/AdminPanel" : "/login"} />} /> 
+            <Route path="/AdminPanel" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to="/login" />} />
           </Routes>
         </main>
+
+        {/* Subscription Section */}
+        {!isAuthenticated && (
+          <section className="mt-16 bg-black bg-opacity-60 py-12">
+            <div className="max-w-3xl mx-auto px-6 text-center">
+              <h2 className="text-3xl font-bold text-[#FFD700]">Stay in Touch</h2>
+              <p className="text-gray-300 mt-4 mb-6">
+                Subscribe to our newsletter for the latest news and special offers!
+              </p>
+              {subscriptionStatus && (
+                <p className={`mb-4 ${subscriptionStatus.includes('Success') ? 'text-green-500' : 'text-red-500'}`}>
+                  {subscriptionStatus}
+                </p>
+              )}
+              <form onSubmit={handleSubscription}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="px-4 py-2 rounded-md"
+                  placeholder="Enter your email"
+                />
+                <button type="submit" className="px-6 py-2 bg-[#FFD700] text-black rounded-md ml-4">
+                  Subscribe
+                </button>
+              </form>
+            </div>
+          </section>
+        )}
+
+        {/* Footer Section */}
+        <footer className="bg-black text-white py-4 mt-16">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <p>© 2025 All Rights Reserved. HALF BAD™</p>
+            <div className="mt-4 space-x-6">
+              <a href="mailto:info@halfbad.com" className="hover:text-[#FFD700]">Email</a>
+              <a href="https://facebook.com/halfbad" className="hover:text-[#FFD700]">Facebook</a>
+              <a href="https://instagram.com/halfbad" className="hover:text-[#FFD700]">Instagram</a>
+            </div>
+          </div>
+        </footer>
       </div>
     </Router>
   );

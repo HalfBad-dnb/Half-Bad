@@ -7,10 +7,21 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "newsletter_subscriptions")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Newsletter {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -19,36 +30,22 @@ public class Newsletter {
     @Email(message = "Please provide a valid email address")
     private String email;
 
-    private boolean active = true;
+    @Builder.Default
+    private boolean active = true; // Default value for 'active'
 
-    public Newsletter() {
-    }
-
+    // Constructor for email only (useful for subscription)
     public Newsletter(String email) {
         this.email = email;
+        this.active = true; // Default to active
     }
 
-    public Long getId() {
-        return id;
+    // Optional: Add a method to deactivate the subscription
+    public void deactivate() {
+        this.active = false;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
+    // Optional: Add a method to activate the subscription
+    public void activate() {
+        this.active = true;
     }
 }

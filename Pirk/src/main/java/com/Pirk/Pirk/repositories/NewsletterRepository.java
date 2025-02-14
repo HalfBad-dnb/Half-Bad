@@ -6,5 +6,8 @@ import java.util.Optional;
 
 public interface NewsletterRepository extends JpaRepository<Newsletter, Long> {
     boolean existsByEmail(String email);
+    
     Optional<Newsletter> findByEmail(String email);
+
+    void deleteByEmail(String email);
 }
