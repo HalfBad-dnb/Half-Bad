@@ -22,21 +22,15 @@ function AdminPanel() {
         }
 
         console.log("Token found, fetching data...");
-        const [usersRes, ordersRes, productsRes, musicRes, eventsRes] = await Promise.all([
-          axios.get("http://localhost:8081/api/AdminPanel/users", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("http://localhost:8081/api/AdminPanel/orders", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("http://localhost:8081/api/AdminPanel/products", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("http://localhost:8081/api/AdminPanel/music", { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get("http://localhost:8081/api/AdminPanel/events", { headers: { Authorization: `Bearer ${token}` } }),
-        ]);
 
-        console.log("API responses:", usersRes.data, ordersRes.data, productsRes.data, musicRes.data, eventsRes.data);
-
-        setUsers(usersRes.data);
-        setOrders(ordersRes.data);
-        setProducts(productsRes.data);
-        setMusic(musicRes.data);
-        setEvents(eventsRes.data);
+        let response = await axios.get("http://localhost:8081/api/admin", { headers: { Authorization: `Bearer ${token}` } });
+        const {users, orders, products, usersCount, productsCount, ordersCount} = response.data;
+        console.log(users, orders, products);
+        setUsers(users);
+        setOrders(orders);
+        setProducts(products);
+        //setMusic(musicRes.data);
+        //setEvents(eventsRes.data);
       } catch (err) {
         console.log("Error fetching data:", err);
         setError("Failed to fetch data: " + (err.response?.data?.message || err.message));
@@ -51,9 +45,9 @@ function AdminPanel() {
   }, [navigate]);
 
   const sections = [
-    { title: "Users", data: users, link: "/admin/user/", key: "id", label: "username" },
-    { title: "Orders", data: orders, link: "/admin/order/", key: "id", label: "orderNumber" },
-    { title: "Products", data: products, link: "/admin/product/", key: "id", label: "name" },
+    { title: "Users", data: users, link: "/admin/users/", key: "id", label: "username" },
+    { title: "Orders", data: orders, link: "/admin/orders/", key: "id", label: "orderNumber" },
+    { title: "Products", data: products, link: "/admin/products/", key: "id", label: "name" },
     { title: "Music", data: music, link: "/admin/music/", key: "id", label: "title" },
     { title: "Events", data: events, link: "/admin/event/", key: "id", label: "eventName" },
   ];
