@@ -222,6 +222,8 @@ function AppContent() {
             <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
             <Route path="/order-confirmation" element={isAuthenticated ? <OrderConfirmationPage /> : <Navigate to="/login" />} />
             <Route path="/AdminPanel" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to="/login" />} />
+            
+            
           </Routes>
         </main>
 
@@ -231,23 +233,33 @@ function AppContent() {
             <div className="max-w-3xl mx-auto px-6 text-center">
               <h2 className="text-3xl font-bold text-[#FFD700]">Stay in Touch</h2>
               <p className="text-white mt-4 mb-6">Subscribe to our newsletter to get updates about new merch, music, and events!</p>
-              <form onSubmit={handleSubscription} className="flex justify-center items-center">
+              <form onSubmit={handleSubscription}>
                 <input
                   type="email"
-                  placeholder="Enter your email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="px-4 py-2 rounded-l-md text-black"
-                  required
+                  placeholder="Enter your email"
+                  className="w-72 p-2 rounded-md text-black"
                 />
-                <button type="submit" className="bg-[#FFD700] text-black px-6 py-2 rounded-r-md hover:bg-[#FFCC00]">
+                <button type="submit" className="bg-[#FFD700] text-black py-2 px-6 rounded-md ml-2">
                   Subscribe
                 </button>
               </form>
-              {subscriptionStatus && <p className="text-white mt-4">{subscriptionStatus}</p>}
+              {subscriptionStatus && <p className="mt-4 text-white">{subscriptionStatus}</p>}
             </div>
           </section>
         )}
+
+        <footer className="bg-black text-white py-8 mt-16">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <div className="flex justify-center space-x-6">
+              <a href="mailto:your-email@example.com" className="text-white hover:text-[#FFD700]">Email</a>
+              <a href="https://www.facebook.com/your-facebook-page" target="_blank" rel="noopener noreferrer" className="text-white hover:text-[#FFD700]">Facebook</a>
+              <a href="https://www.instagram.com/your-instagram-profile" target="_blank" rel="noopener noreferrer" className="text-white hover:text-[#FFD700]">Instagram</a>
+            </div>
+            <p className="mt-4 text-white text-sm">© 2025 HALF BAD™</p>
+          </div>
+        </footer>
       </div>
     </Router>
   );

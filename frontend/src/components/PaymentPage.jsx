@@ -336,10 +336,10 @@ const PaymentPage = () => {
 
               <button
                 type="submit"
+                className="w-full py-2 bg-yellow-500 text-black font-bold rounded disabled:opacity-50"
                 disabled={isSubmitting}
-                className="w-full py-2 bg-yellow-500 text-black font-bold rounded-md hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-yellow-600 disabled:opacity-50"
               >
-                {isSubmitting ? 'Processing...' : 'Submit Payment'}
+                {isSubmitting ? 'Processing...' : 'Pay Now'}
               </button>
             </form>
           </>

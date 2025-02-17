@@ -7,17 +7,20 @@ import com.Pirk.Pirk.services.AdminService;
 import com.Pirk.Pirk.models.AdminPanel;
 import org.springframework.http.ResponseEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import java.util.List;
 
-@Controller
+@RestController // Changed to RestController for REST API
 public class AdminPanelController {
 
     @Autowired
     private AdminService adminService;
 
-    // Display the Admin Panel Dashboard
+    // Display the Admin Panel Dashboard - Only accessible by admins
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/api/admin")
     public ResponseEntity<AdminPanel> getAdminPanel() {
         List<User> users = adminService.getAllUsers();
@@ -27,6 +30,5 @@ public class AdminPanelController {
         return ResponseEntity.ok(adminPanel);
     }
     
-
     // Other methods for user, product, or order management can be added as needed
 }
