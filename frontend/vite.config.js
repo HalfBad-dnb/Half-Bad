@@ -12,6 +12,11 @@ export default defineConfig({
       protocol: 'ws',
       host: 'localhost',
     },
+    host: '0.0.0.0', // Allows external access
+    allowedHosts: [
+      '.ngrok-free.app', // Allows any ngrok subdomain
+      'localhost',
+    ],
   },
   resolve: {
     extensions: ['.js', '.jsx', '.json'],
