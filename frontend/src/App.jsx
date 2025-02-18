@@ -18,6 +18,7 @@ import OrderConfirmationPage from "./components/OrderConfirmationPage";
 import AdminPanel from "./components/AdminPanel";
 import MusicPage from "./components/MusicPage";
 import EventsPage from "./components/EventsPage";
+import UsersPage from "./components/UsersPage"; 
 
 const ErrorBoundary = ({ children }) => {
   const [hasError, setHasError] = useState(false);
@@ -222,33 +223,34 @@ function AppContent() {
             <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/login" />} />
             <Route path="/order-confirmation" element={isAuthenticated ? <OrderConfirmationPage /> : <Navigate to="/login" />} />
             <Route path="/AdminPanel" element={isAuthenticated && userRole === "ADMIN" ? <AdminPanel /> : <Navigate to="/login" />} />
-            
-            
+            <Route path="/admin/users" element={isAuthenticated && userRole === "ADMIN" ? <UsersPage /> : <Navigate to="/login" />} />
+
+
           </Routes>
         </main>
 
         {/* Subscription Section */}
-        {!isAuthenticated && (
-          <section className="mt-16 bg-black bg-opacity-60 py-12">
-            <div className="max-w-3xl mx-auto px-6 text-center">
-              <h2 className="text-3xl font-bold text-[#FFD700]">Stay in Touch</h2>
-              <p className="text-white mt-4 mb-6">Subscribe to our newsletter to get updates about new merch, music, and events!</p>
-              <form onSubmit={handleSubscription}>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Enter your email"
-                  className="w-72 p-2 rounded-md text-black"
-                />
-                <button type="submit" className="bg-[#FFD700] text-black py-2 px-6 rounded-md ml-2">
-                  Subscribe
-                </button>
-              </form>
-              {subscriptionStatus && <p className="mt-4 text-white">{subscriptionStatus}</p>}
-            </div>
-          </section>
-        )}
+{!isAuthenticated && (
+  <>
+    <h2 className="text-3xl font-bold text-[#FFD700] text-center mt-16">Stay in Touch</h2>
+    <p className="text-white mt-4 mb-6 text-center">
+      Subscribe to our newsletter to get updates about new merch, music, and events!
+    </p>
+    <form onSubmit={handleSubscription} className="text-center">
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Enter your email"
+        className="w-72 p-2 rounded-md text-black"
+      />
+      <button type="submit" className="bg-[#FFD700] text-black py-2 px-6 rounded-md ml-2">
+        Subscribe
+      </button>
+    </form>
+    {subscriptionStatus && <p className="mt-4 text-white text-center">{subscriptionStatus}</p>}
+  </>
+)}
 
         <footer className="bg-black text-white py-8 mt-16">
           <div className="max-w-7xl mx-auto px-6 text-center">

@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -14,13 +15,36 @@ const UsersPage = () => {
         return;
       }
 
+      // Decode the token and check if the user has an "ADMIN" role
+      const decodedToken = JSON.parse(atob(token.split(".")[1])); // Decode the JWT token
+      if (!decodedToken.roles || !decodedToken.roles.includes("ADMIN")) {
+        navigate("/login");  // If the user is not an admin, redirect them
+        return;
+      }
+
       try {
         const response = await axios.get("http://localhost:8081/api/admin/users", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setUsers(response.data);
+
+        if (response.data) {
+          setUsers(response.data); // Only set users if response.data is valid
+        }
       } catch (error) {
-        console.error("Error fetching users", error);
+        console.error("Error fetching users:", error.response ? error.response.data : error.message);
+        if (error.response) {
+          // Log detailed error info from the response
+          console.error("Response Error Data:", error.response.data);
+          console.error("Response Status:", error.response.status);
+          console.error("Response Headers:", error.response.headers);
+        } else if (error.request) {
+          // Log the request data if no response was received
+          console.error("Request Error Data:", error.request);
+        } else {
+          console.error("Error Message:", error.message);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -34,17 +58,41 @@ const UsersPage = () => {
       return;
     }
 
+    // Decode the token and check if the user has an "ADMIN" role
+    const decodedToken = JSON.parse(atob(token.split(".")[1]));
+    if (!decodedToken.roles || !decodedToken.roles.includes("ADMIN")) {
+      navigate("/login");  // If not an admin, redirect to login
+      return;
+    }
+
     try {
       await axios.delete(`http://localhost:8081/api/admin/users/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsers(users.filter(user => user.id !== userId));
+      setUsers((prevUsers) => prevUsers.filter((user) => user.id !== userId));
       alert("User deleted successfully");
     } catch (error) {
-      console.error("Error deleting user", error);
+      console.error("Error deleting user:", error.response ? error.response.data : error.message);
+      if (error.response) {
+        console.error("Response Error Data:", error.response.data);
+        console.error("Response Status:", error.response.status);
+        console.error("Response Headers:", error.response.headers);
+      } else if (error.request) {
+        console.error("Request Error Data:", error.request);
+      } else {
+        console.error("Error Message:", error.message);
+      }
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-r from-[#4B0000] to-[#000000] text-white p-10">
+        <h1 className="text-5xl font-bold text-[#FFD700] text-center mb-12">Loading Users...</h1>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#4B0000] to-[#000000] text-white p-10">
@@ -63,8 +111,11 @@ const UsersPage = () => {
       {/* User List */}
       <div className="space-y-4">
         {users.length > 0 ? (
-          users.map(user => (
-            <div key={user.id} className="bg-black bg-opacity-50 p-4 rounded-lg border border-[#FFD700]/40 hover:border-[#FFD700]/60 transition-all duration-300">
+          users.map((user) => (
+            <div
+              key={user.id}
+              className="bg-black bg-opacity-50 p-4 rounded-lg border border-[#FFD700]/40 hover:border-[#FFD700]/60 transition-all duration-300"
+            >
               <h3 className="text-xl font-semibold text-[#FFD700]">{user.username}</h3>
               <button
                 onClick={() => navigate(`/admin/users/${user.id}/edit`)}

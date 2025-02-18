@@ -8,9 +8,11 @@ import com.Pirk.Pirk.repositories.ProductRepository;
 import com.Pirk.Pirk.repositories.OrderRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class AdminService {
@@ -26,20 +28,17 @@ public class AdminService {
 
     // Method to get all users
     public List<User> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users != null ? users : Collections.emptyList();
+        return Optional.ofNullable(userRepository.findAll()).orElse(Collections.emptyList());
     }
 
     // Method to get all products
     public List<Product> getAllProducts() {
-        List<Product> products = productRepository.findAll();
-        return products != null ? products : Collections.emptyList();
+        return Optional.ofNullable(productRepository.findAll()).orElse(Collections.emptyList());
     }
 
     // Method to get all orders
     public List<Order> getAllOrders() {
-        List<Order> orders = orderRepository.findAll();
-        return orders != null ? orders : Collections.emptyList();
+        return Optional.ofNullable(orderRepository.findAll()).orElse(Collections.emptyList());
     }
 
     // Method to get a product by ID
@@ -55,21 +54,24 @@ public class AdminService {
     }
 
     // Method to promote a user to Admin
+    @Transactional
     public void promoteToAdmin(Long id) {
-        User user = getUserById(id);  // Fetch user by ID
-        if (user != null && !user.getRole().toString().equalsIgnoreCase("admin")) {
-            user.setRole(User.Role.ADMIN);  // Set role to admin
-            userRepository.save(user);  // Save the updated user
+        User user = getUserById(id);
+        if (!"ADMIN".equalsIgnoreCase(user.getRole().toString())) {
+            user.setRole(User.Role.ADMIN);
+            userRepository.save(user);
         } else {
             throw new RuntimeException("User is already an admin or does not exist");
         }
     }
 
-
     // Method to delete a user
-    public void deleteUser(Long id) {
-        User user = getUserById(id);  // Fetch user by ID
-        userRepository.delete(user);  // Delete the user
+    @Transactional
+    public boolean deleteUserById(Long id) {
+        if (userRepository.existsById(id)) {
+            userRepository.deleteById(id);
+            return true;
+        }
+        return false;
     }
 }
-
