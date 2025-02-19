@@ -34,7 +34,7 @@ function AdminOrders() {
   }, [navigate]);
 
   const handleBack = () => {
-    navigate("/admin");
+    navigate("/AdminPanel");
   };
 
   return (

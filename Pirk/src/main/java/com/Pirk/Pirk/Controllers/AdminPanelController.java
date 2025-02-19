@@ -43,6 +43,24 @@ public class AdminPanelController {
         return ResponseEntity.ok(adminService.getAllProducts());
     }
 
+    // Create a new product
+    @PostMapping("/products")
+    public ResponseEntity<Product> createProduct(@RequestBody Product product) {
+        Product createdProduct = adminService.createProduct(product);
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdProduct);
+    }
+
+    // Delete a product by ID
+    @DeleteMapping("/products/{id}")
+    public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
+        boolean deleted = adminService.deleteProductById(id);
+        if (deleted) {
+            return ResponseEntity.ok("Product deleted successfully");
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Product not found");
+        }
+    }
+
     // Get all orders
     @GetMapping("/orders")
     public ResponseEntity<List<Order>> getAllOrders() {

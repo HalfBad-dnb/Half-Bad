@@ -47,6 +47,22 @@ public class AdminService {
             .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
     }
 
+    // Method to create a new product
+    @Transactional
+    public Product createProduct(Product product) {
+        return productRepository.save(product);
+    }
+
+    // Method to delete a product by ID
+    @Transactional
+    public boolean deleteProductById(Long id) {
+        if (productRepository.existsById(id)) {
+            productRepository.deleteById(id);
+            return true;
+        }
+        return false;
+    }
+
     // Method to get a user by ID
     public User getUserById(Long id) {
         return userRepository.findById(id)
