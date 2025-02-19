@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrash, faPlus, faArrowLeft } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrash, faPlus, faArrowLeft } from "@fortawesome/free-solid-svg-icons";
 
 function UsersPage() {
   const [users, setUsers] = useState([]);
@@ -12,7 +12,10 @@ function UsersPage() {
   const [newUser, setNewUser] = useState({
     username: "",
     email: "",
-    password: ""
+    password: "",
+    fullName: "",
+    address: "",
+    phone: ""
   });
   const [showAddForm, setShowAddForm] = useState(false);
   const navigate = useNavigate();
@@ -52,9 +55,9 @@ function UsersPage() {
         "http://localhost:8081/api/admin/users",
         newUser,
         {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
         }
       );
@@ -64,7 +67,10 @@ function UsersPage() {
       setNewUser({
         username: "",
         email: "",
-        password: ""
+        password: "",
+        fullName: "",
+        address: "",
+        phone: "",
       });
       setShowAddForm(false);
     } catch (err) {
@@ -83,7 +89,7 @@ function UsersPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsers(users.filter(user => user.id !== userId));
+      setUsers(users.filter((user) => user.id !== userId));
       setSuccess("User deleted successfully!");
     } catch (err) {
       setError("Failed to delete user: " + (err.response?.data?.message || err.message));
@@ -124,9 +130,17 @@ function UsersPage() {
           <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <input
               type="text"
+              placeholder="Full Name"
+              value={newUser.fullName}
+              onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+              className="p-2 rounded bg-gray-800 border border-gray-700"
+              required
+            />
+            <input
+              type="text"
               placeholder="Username"
               value={newUser.username}
-              onChange={(e) => setNewUser({...newUser, username: e.target.value})}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
               className="p-2 rounded bg-gray-800 border border-gray-700"
               required
             />
@@ -134,7 +148,7 @@ function UsersPage() {
               type="email"
               placeholder="Email"
               value={newUser.email}
-              onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
               className="p-2 rounded bg-gray-800 border border-gray-700"
               required
             />
@@ -142,9 +156,23 @@ function UsersPage() {
               type="password"
               placeholder="Password"
               value={newUser.password}
-              onChange={(e) => setNewUser({...newUser, password: e.target.value})}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
               className="p-2 rounded bg-gray-800 border border-gray-700"
               required
+            />
+            <input
+              type="text"
+              placeholder="Address"
+              value={newUser.address}
+              onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
+              className="p-2 rounded bg-gray-800 border border-gray-700"
+            />
+            <input
+              type="text"
+              placeholder="Phone Number"
+              value={newUser.phone}
+              onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+              className="p-2 rounded bg-gray-800 border border-gray-700"
             />
             <button
               type="submit"
@@ -165,11 +193,12 @@ function UsersPage() {
               key={user.id}
               className="bg-black bg-opacity-80 p-6 rounded-xl flex justify-between items-center border border-gray-800 hover:border-[#FFD700] transition-all duration-300"
             >
-              <div className="flex items-center space-x-4">
-                <div>
-                  <h3 className="text-xl font-semibold text-[#FFD700]">{user.username}</h3>
-                  <p className="text-gray-400">Email: {user.email}</p>
-                </div>
+              <div>
+                <h3 className="text-xl font-semibold text-[#FFD700]">{user.username}</h3>
+                <p className="text-gray-400">Full Name: {user.fullName}</p>
+                <p className="text-gray-400">Email: {user.email}</p>
+                <p className="text-gray-400">Address: {user.address || "N/A"}</p>
+                <p className="text-gray-400">Phone: {user.phone || "N/A"}</p>
               </div>
               <button
                 onClick={() => handleDeleteUser(user.id)}
