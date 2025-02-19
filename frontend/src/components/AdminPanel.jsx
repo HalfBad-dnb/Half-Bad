@@ -48,8 +48,8 @@ function AdminPanel() {
 
   const sections = [
     { title: "Users", data: users, key: "id", label: "username", link: "/admin/users" },
-    { title: "Orders", data: orders, key: "id", label: "orderNumber" },
-    { title: "Products", data: products, key: "id", label: "name" },
+    { title: "Orders", data: orders, key: "id", label: "orderNumber", link: "/admin/orders" },
+    { title: "Products", data: products, key: "id", label: "name", link: "/admin/products" },
   ];
 
   return (
@@ -66,7 +66,7 @@ function AdminPanel() {
             <div 
               key={section.title} 
               className="bg-black bg-opacity-80 p-6 rounded-2xl shadow-xl border-2 border-[#FFD700]/20 hover:border-[#FFD700]/40 transition-all duration-500 cursor-pointer"
-              onClick={() => section.link && navigate(section.link)}
+              onClick={() => navigate(section.link)}
             >
               <h2 className="text-3xl font-bold text-[#FFD700] text-center mb-6">{section.title}</h2>
               <div className="space-y-4 max-h-[400px] overflow-y-auto custom-scrollbar">

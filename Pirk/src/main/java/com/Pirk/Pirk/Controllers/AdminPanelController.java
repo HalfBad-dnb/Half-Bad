@@ -37,6 +37,18 @@ public class AdminPanelController {
         return ResponseEntity.ok(adminService.getAllUsers());
     }
 
+    // Get all products
+    @GetMapping("/products")
+    public ResponseEntity<List<Product>> getAllProducts() {
+        return ResponseEntity.ok(adminService.getAllProducts());
+    }
+
+    // Get all orders
+    @GetMapping("/orders")
+    public ResponseEntity<List<Order>> getAllOrders() {
+        return ResponseEntity.ok(adminService.getAllOrders());
+    }
+
     // Delete a user by ID
     @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
