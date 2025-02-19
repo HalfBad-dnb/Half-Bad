@@ -31,8 +31,14 @@ public class AdminPanelController {
         return ResponseEntity.ok(adminPanel);
     }
 
+    // Get all users
+    @GetMapping("/users")
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(adminService.getAllUsers());
+    }
+
     // Delete a user by ID
-    @DeleteMapping("/user/{id}")
+    @DeleteMapping("/users/{id}")
     public ResponseEntity<String> deleteUser(@PathVariable Long id) {
         boolean deleted = adminService.deleteUserById(id);
         if (deleted) {
