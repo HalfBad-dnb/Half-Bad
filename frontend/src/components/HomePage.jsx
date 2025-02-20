@@ -10,7 +10,7 @@ const HomePage = () => {
   const [email, setEmail] = useState('');
   const [subscriptionStatus, setSubscriptionStatus] = useState('');
 
-const eddiekSpotifyId = '3v5jwZvPwzYJ8eLsB7Fl2I';
+
 
   // Get default image based on product name
   const getImageUrl = (product) => {
@@ -27,7 +27,7 @@ const eddiekSpotifyId = '3v5jwZvPwzYJ8eLsB7Fl2I';
 
 
     (async () => {
-    let res = await axios.get(`https://api.spotify.com/v1/artists/${eddiekSpotifyId}/top-tracks?market=US`)
+    
 
     console.log(res.data)
     })();

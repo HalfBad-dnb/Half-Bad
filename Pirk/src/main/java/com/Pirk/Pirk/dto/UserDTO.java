@@ -11,4 +11,6 @@ public class UserDTO {
     private String username;
     private String email;
     private String role; // You can modify this if you need a more complex role system
+    private String Address;
+    private String phone_number;
 }

@@ -14,25 +14,33 @@ const PaymentPage = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  const [paymentSuccess, setPaymentSuccess] = useState(false); // New state for success message
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     const orderId = sessionStorage.getItem('orderId');
-    const orderTotal = sessionStorage.getItem('orderTotal');
+    const orderTotalStr = sessionStorage.getItem('orderTotal');
 
     if (!token) {
       navigate('/login', { state: { returnUrl: '/payment' } });
       return;
     }
 
-    if (!orderId || !orderTotal) {
-      console.error('Missing order data:', { orderId, orderTotal });
+    if (!orderId || !orderTotalStr) {
+      console.error('Missing order data:', { orderId, orderTotalStr });
       navigate('/checkout');
       return;
     }
 
-    setOrderTotal(parseFloat(orderTotal));
+    // Parse the order total and fix to 2 decimal places
+    const parsedTotal = parseFloat(orderTotalStr);
+    if (isNaN(parsedTotal)) {
+      console.error('Invalid order total:', orderTotalStr);
+      navigate('/checkout');
+      return;
+    }
+    
+    setOrderTotal(parseFloat(parsedTotal.toFixed(2)));
   }, [navigate]);
 
   const validateCardNumber = (number) => {
@@ -176,6 +184,9 @@ const PaymentPage = () => {
       const cleanCardNumber = cardNumber.replace(/\s/g, '');
       const last4 = cleanCardNumber.slice(-4);
       
+      // Ensure the amount is properly formatted before sending
+      const paymentAmount = parseFloat(orderTotal.toFixed(2));
+      
       try {
         const response = await fetch('http://localhost:8081/api/payments', {
           method: 'POST',
@@ -190,7 +201,7 @@ const PaymentPage = () => {
             orderId: parseInt(orderId, 10),
             buyerId: parseInt(userId, 10),
             last4,
-            amount: orderTotal
+            amount: paymentAmount // Send the properly formatted amount
           })
         });
 
@@ -225,7 +236,7 @@ const PaymentPage = () => {
           sessionStorage.removeItem('orderId');
           sessionStorage.removeItem('orderTotal');
 
-          setPaymentSuccess(true); // Set payment success to true
+          setPaymentSuccess(true);
         } else {
           throw new Error(data.message || 'Payment was not completed successfully');
         }
