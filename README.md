@@ -27,4 +27,4 @@ then run --> npm run dev .
 
 4. Change ports if they are in use or kill 
 
-in UIview is pictures of how web app look .
+in PageLook is pictures of how web app look .
