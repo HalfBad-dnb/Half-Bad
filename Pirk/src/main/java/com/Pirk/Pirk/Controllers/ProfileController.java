@@ -5,7 +5,7 @@ import com.Pirk.Pirk.services.ProfileService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
 import java.util.Map;
 
 @RestController
@@ -36,12 +36,7 @@ public class ProfileController {
         return ResponseEntity.ok(profileService.updateUserProfile(userId, user));
     }
 
-    @PostMapping("/{userId}/avatar")
-    public ResponseEntity<String> uploadProfilePicture(
-            @PathVariable Long userId,
-            @RequestParam("file") MultipartFile file) {
-        return ResponseEntity.ok(profileService.uploadProfilePicture(userId, file));
-    }
+
 
     @PutMapping("/{userId}/password")
     public ResponseEntity<Void> changePassword(

@@ -4,14 +4,14 @@ import com.Pirk.Pirk.models.User;
 import com.Pirk.Pirk.repositories.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
+
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
+
 import java.nio.file.Paths;
 import java.util.Optional;
-import java.util.UUID;
+
 
 @Service
 public class ProfileService {
@@ -49,9 +49,9 @@ public class ProfileService {
         return userRepository.findById(id).map(user -> {
             user.setUsername(updatedUser.getUsername());
             user.setEmail(updatedUser.getEmail());
-            user.setProfilePicture(updatedUser.getProfilePicture());
+         
             user.setAddress(updatedUser.getAddress());
-            user.setPreferences(updatedUser.getPreferences());
+           
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("User not found"));
     }
@@ -60,29 +60,14 @@ public class ProfileService {
         return userRepository.findById(id).map(user -> {
             user.setUsername(updatedUser.getUsername());
             user.setEmail(updatedUser.getEmail());
-            user.setProfilePicture(updatedUser.getProfilePicture());
+     
             user.setAddress(updatedUser.getAddress());
-            user.setPreferences(updatedUser.getPreferences());
+    
             return userRepository.save(user);
         }).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public String uploadProfilePicture(Long userId, MultipartFile file) {
-        User user = getUserProfile(userId);
-        
-        try {
-            String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
-            Path filePath = Paths.get(uploadDir + fileName);
-            Files.copy(file.getInputStream(), filePath);
-            
-            user.setProfilePicture(fileName);
-            userRepository.save(user);
-            
-            return fileName;
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to store file", e);
-        }
-    }
+  
 
     public void changePassword(Long userId, String oldPassword, String newPassword) {
         User user = getUserProfile(userId);
@@ -98,15 +83,7 @@ public class ProfileService {
     public void deleteUserProfile(Long userId) {
         User user = getUserProfile(userId);
         
-        // Delete user's profile picture if exists
-        if (user.getProfilePicture() != null) {
-            try {
-                Files.deleteIfExists(Paths.get(uploadDir + user.getProfilePicture()));
-            } catch (IOException e) {
-                // Log error but continue with user deletion
-                System.err.println("Failed to delete profile picture: " + e.getMessage());
-            }
-        }
+      
         
         userRepository.delete(user);
     }

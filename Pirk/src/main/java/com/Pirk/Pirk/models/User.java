@@ -55,13 +55,11 @@ public class User {
     
     private String lastName;
     
-    private String profilePicture;  // Store URL or file path
+   
     
     @Column(length = 500)
     private String address;
     
-    @Column(length = 1000)
-    private String bio;
     
     @Column(length = 20)
     private String phoneNumber;
@@ -82,8 +80,7 @@ public class User {
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
     
-    @Column(length = 1000)
-    private String preferences; // Store as JSON string
+  
 
     @PrePersist
     protected void onCreate() {
