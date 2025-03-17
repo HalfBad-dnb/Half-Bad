@@ -46,8 +46,18 @@ function AppContent() {
     window.location.href = "/login";
   };
 
+  // Prevent scrolling when menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [menuOpen]);
+
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#8B0000] to-[#000000]">
+      {/* Header */}
       <header className="fixed top-0 left-0 w-full bg-black shadow-lg z-50 flex justify-between items-center px-6 py-4">
         <FontAwesomeIcon 
           icon={faBars} 
@@ -56,10 +66,11 @@ function AppContent() {
         />
       </header>
 
+      {/* Sidebar Menu */}
       {menuOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-75 z-50 flex">
           <div className="w-64 bg-gray-900 h-full p-5 flex flex-col">
-            <button className="text-white text-2xl self-end" onClick={() => setMenuOpen(false)}>
+            <button className="text-white text-2xl self-end mb-4" onClick={() => setMenuOpen(false)}>
               <FontAwesomeIcon icon={faTimes} />
             </button>
             <NavLink to="/" className="text-white py-2" onClick={() => setMenuOpen(false)}>
@@ -100,7 +111,8 @@ function AppContent() {
         </div>
       )}
 
-      <main className="pt-20">
+      {/* Main Content */}
+      <main className="pt-20 pb-16">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/music" element={<MusicPage />} />
@@ -114,6 +126,11 @@ function AppContent() {
           <Route path="/admin/orders" element={isAuthenticated && userRole === "ADMIN" ? <AdminOrders /> : <Navigate to="/login" />} />
         </Routes>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-black text-white text-center py-4 fixed bottom-0 w-full">
+        <p>HALF BAD &copy; {new Date().getFullYear()} All rights reserved</p>
+      </footer>
     </div>
   );
 }
