@@ -209,14 +209,12 @@ const HomePage = () => {
 
               <div className="mt-12 transform hover:scale-105 transition-transform duration-300">
                 <h3 className="text-3xl font-bold text-[#FFD700] mb-4">Cookie Tomorrow (Half Bad Remix)</h3>
-                <p className="text-xl text-gray-300">Artist: Half Bad</p>
-                <button className="mt-6 bg-[#FFD700] hover:bg-[#FFD700]/80 text-black font-bold py-3 px-8 rounded-full transform transition-all duration-300 hover:scale-105">
-                  Listen Now
-                </button>
+                <p className="text-xl text-gray-300">Artist: Cookie , Half Bad</p>
               </div>
             </div>
           </div>
         </section>
+        
 
         {/* Our Story Section */}
         <section className="relative text-center py-20 px-8 z-30">
