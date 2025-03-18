@@ -27,6 +27,7 @@ const MusicPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-r from-[#4B0000] to-[#000000] text-white">
+      
       {/* Hero Section */}
       <section className="relative text-center py-20 px-8 z-30">
         <div className="absolute inset-0 bg-gradient-to-b from-[#4B0000] via-black to-[#4B0000] opacity-50"></div>
@@ -51,10 +52,10 @@ const MusicPage = () => {
                       <iframe className="w-full h-52" src={`https://www.youtube.com/embed/${track.youtubeUrl.split('v=')[1]}`} title={track.artist} allowFullScreen></iframe>
                     </div>
                   )}
-                  
+
                   {/* Artist Name */}
                   <h2 className="text-2xl font-bold text-[#FFD700]">{track.artist}</h2>
-                  
+
                   {/* Song Name */}
                   <h3 className="text-lg text-gray-300">{track.song || "Unknown Song"}</h3>
                 </div>
