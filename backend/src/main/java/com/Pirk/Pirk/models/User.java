@@ -52,14 +52,10 @@ public class User {
 
     // Profile Fields
     private String firstName;
-    
     private String lastName;
-    
-   
     
     @Column(length = 500)
     private String address;
-    
     
     @Column(length = 20)
     private String phoneNumber;
@@ -79,8 +75,6 @@ public class User {
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;
-    
-  
 
     @PrePersist
     protected void onCreate() {
