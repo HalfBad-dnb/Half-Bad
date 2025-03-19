@@ -13,8 +13,10 @@ import EventsPage from "./components/EventsPage";
 import UsersPage from "./components/UsersPage";
 import AdminOrders from "./components/AdminOrders";
 import ArtistMenu from "./components/ArtistMenu";
-import Eddiek from "./artists/Eddiek";
-import Halfbad from "./artists/Halfbad";
+import Eddiek from "./components/artists/Eddiek";
+import Halfbad from "./components/artists/Halfbad";
+import Beats from "./components/beats/beatsForSale";
+import PostBoard from "./components/Feed/PostBoard";
 
 
 function App() {
@@ -80,8 +82,14 @@ function AppContent() {
             <NavLink to="/" className="text-white py-2" onClick={() => setMenuOpen(false)}>
               <FontAwesomeIcon icon={faHome} className="mr-2" /> Home
             </NavLink>
+            <NavLink to= "PostBoard" className="text-white py-2" onClick={() => setMenuOpen(false)}>
+              <FontAwesomeIcon icon={faHome} className="mr-2" /> Feed
+            </NavLink>
             <NavLink to="/music" className="text-white py-2" onClick={() => setMenuOpen(false)}>
               <FontAwesomeIcon icon={faMusic} className="mr-2" /> Music
+            </NavLink>
+            <NavLink to="/beats" className="text-white py-2" onClick={() => setMenuOpen(false)}>
+              <FontAwesomeIcon icon={faMusic} className="mr-2" /> Beats
             </NavLink>
             {/* Artists Menu with Dropdown */}
             <div>
@@ -156,6 +164,8 @@ function AppContent() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/music" element={<MusicPage />} />
+          <Route path="/PostBoard" element={<PostBoard />} />
+          <Route path="/beats" element={<Beats />} />
           <Route path="/artist-menu" element={<ArtistMenu />} />
          
           <Route path="/eddiek" element={<Eddiek />} />

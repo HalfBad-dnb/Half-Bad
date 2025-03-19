@@ -25,5 +25,10 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/images/**")
                 .addResourceLocations("classpath:/static/images/")
                 .setCachePeriod(3600);
+
+        // Add resource handler for beats (MP3 files)
+        registry.addResourceHandler("/beats/**")
+                .addResourceLocations("file:/Users/deividasstropus/Desktop/Parduotuve-main/Pirk/static/beats/")
+                .setCachePeriod(3600);
     }
 }

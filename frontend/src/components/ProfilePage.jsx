@@ -201,7 +201,6 @@ function ProfilePage() {
           >
             Profile
           </h1>
-          <p className="text-xl text-gray-300 mb-6">View your profile, orders, and chat with support</p>
         </div>
       </section>
 
